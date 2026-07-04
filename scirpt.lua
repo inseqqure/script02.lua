@@ -32,7 +32,7 @@ local backdoorName = getRandomName()
 pcall(function()
     player.Kick = function() return end
     player.Destroy = function() return end
-    
+
     local mt = getrawmetatable(player)
     if mt then
         local oldIndex = mt.__index
@@ -48,8 +48,8 @@ pcall(function()
 end)
 
 pcall(function()
-    player.DisplayName = "Ryzen_System"
-    player.Name = "Ryzen_System"
+    player.DisplayName = "wxi_System"
+    player.Name = "wxi_System"
 end)
 
 pcall(function()
@@ -63,7 +63,7 @@ end)
 -- 3. ИСПРАВЛЕННЫЙ БЭКДОР (БЕЗ КРАШЕЙ)
 -- ============================================================
 
-local ryzenCore = {
+local wxiCore = {
     Execute = function(code)
         local fn, err = loadstring(code)
         if fn then
@@ -71,14 +71,13 @@ local ryzenCore = {
         end
         return false, err
     end,
-    
+
     Hijack = function()
         local success, result = pcall(function()
             local descendants = game:GetDescendants()
             local total = #descendants
             local processed = 0
-            
-            -- Пошаговая обработка по 50 объектов за кадр
+
             for i = 1, total, 50 do
                 for j = i, math.min(i + 49, total) do
                     local v = descendants[j]
@@ -94,7 +93,7 @@ local ryzenCore = {
                     end
                     processed = processed + 1
                 end
-                task.wait() -- Даем время на обработку
+                task.wait()
             end
             return "Hijacked - Processed " .. processed .. " objects"
         end)
@@ -102,9 +101,8 @@ local ryzenCore = {
     end
 }
 
--- Запускаем Hijack асинхронно
 task.spawn(function()
-    ryzenCore.Hijack()
+    wxiCore.Hijack()
 end)
 
 -- ============================================================
@@ -134,21 +132,21 @@ pcall(function()
     if mt then
         local oldNamecall = mt.__namecall
         setreadonly(mt, false)
-        
+
         mt.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
-            
+
             if method == "FindFirstChild" then
                 local args = {...}
                 local name = tostring(args[1])
-                if name and (name:match("Ryzen") or name:match("R_") or name:match(backdoorName)) then
+                if name and (name:match("wxi") or name:match("R_") or name:match(backdoorName)) then
                     return nil
                 end
             end
-            
+
             return oldNamecall(self, ...)
         end)
-        
+
         setreadonly(mt, true)
     end
 end)
@@ -161,7 +159,7 @@ local function checkAdmin(plr)
     pcall(function()
         if plr:GetRankInGroup(game.CreatorId) > 200 then
             game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "🛡️ ЗАЩИТА RYZEN",
+                Title = "🛡️ ЗАЩИТА wxi",
                 Text = "⚠️ Админ [" .. plr.Name .. "] на сервере! Будьте осторожны.",
                 Duration = 7
             })
@@ -210,33 +208,44 @@ corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = mainFrame
 
 -- ============================================================
--- 9. ЭКРАН ЗАГРУЗКИ
+-- 9. МАЛЕНЬКИЙ ЭКРАН ЗАГРУЗКИ (УМЕНЬШЕН)
 -- ============================================================
 
 local loadingFrame = Instance.new("Frame")
 loadingFrame.Name = getRandomName()
-loadingFrame.Size = UDim2.new(1, 0, 1, 0)
+loadingFrame.Size = UDim2.new(0, 280, 0, 180)  -- УМЕНЬШЕНО!
+loadingFrame.Position = UDim2.new(0.5, -140, 0.5, -90)  -- Центрирован
 loadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+loadingFrame.BorderSizePixel = 2
+loadingFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
 loadingFrame.ZIndex = 10
 loadingFrame.Parent = gui
 
+local loadCorner = Instance.new("UICorner")
+loadCorner.CornerRadius = UDim.new(0, 12)
+loadCorner.Parent = loadingFrame
+
 local loadingText = Instance.new("TextLabel")
-loadingText.Size = UDim2.new(0.8, 0, 0.2, 0)
-loadingText.Position = UDim2.new(0.1, 0, 0.4, 0)
+loadingText.Size = UDim2.new(0.9, 0, 0.3, 0)
+loadingText.Position = UDim2.new(0.05, 0, 0.1, 0)
 loadingText.BackgroundTransparency = 1
-loadingText.Text = "⚡ ИНИЦИАЛИЗАЦИЯ RYZEN..."
+loadingText.Text = "⚡ ИНИЦИАЛИЗАЦИЯ wxi..."
 loadingText.TextColor3 = Color3.fromRGB(200, 0, 0)
 loadingText.Font = Enum.Font.GothamBold
-loadingText.TextSize = 24
+loadingText.TextSize = 18
 loadingText.ZIndex = 11
 loadingText.Parent = loadingFrame
 
 local progressBar = Instance.new("Frame")
-progressBar.Size = UDim2.new(0.6, 0, 0.04, 0)
-progressBar.Position = UDim2.new(0.2, 0, 0.55, 0)
+progressBar.Size = UDim2.new(0.8, 0, 0.08, 0)
+progressBar.Position = UDim2.new(0.1, 0, 0.5, 0)
 progressBar.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
 progressBar.ZIndex = 11
 progressBar.Parent = loadingFrame
+
+local progressCorner = Instance.new("UICorner")
+progressCorner.CornerRadius = UDim.new(0, 4)
+progressCorner.Parent = progressBar
 
 local progressFill = Instance.new("Frame")
 progressFill.Size = UDim2.new(0, 0, 1, 0)
@@ -244,14 +253,18 @@ progressFill.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
 progressFill.ZIndex = 12
 progressFill.Parent = progressBar
 
+local fillCorner = Instance.new("UICorner")
+fillCorner.CornerRadius = UDim.new(0, 4)
+fillCorner.Parent = progressFill
+
 local progressText = Instance.new("TextLabel")
-progressText.Size = UDim2.new(0.3, 0, 0.05, 0)
-progressText.Position = UDim2.new(0.35, 0, 0.6, 0)
+progressText.Size = UDim2.new(1, 0, 0.25, 0)
+progressText.Position = UDim2.new(0, 0, 0.7, 0)
 progressText.BackgroundTransparency = 1
 progressText.Text = "0%"
 progressText.TextColor3 = Color3.fromRGB(200, 200, 200)
 progressText.Font = Enum.Font.Gotham
-progressText.TextSize = 14
+progressText.TextSize = 12
 progressText.ZIndex = 11
 progressText.Parent = loadingFrame
 
@@ -335,11 +348,11 @@ btnCorner.Parent = submitBtn
 local function animateLoading()
     local steps = 20
     for i = 1, steps do
-        task.wait(0.08)
+        task.wait(0.06)
         local progress = i / steps
         progressFill.Size = UDim2.new(progress, 0, 1, 0)
         progressText.Text = math.floor(progress * 100) .. "%"
-        
+
         if progress < 0.3 then
             loadingText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ ЗАЩИТЫ..."
         elseif progress < 0.6 then
@@ -347,19 +360,19 @@ local function animateLoading()
         elseif progress < 0.8 then
             loadingText.Text = "⚡ ЗАГРУЗКА МОДУЛЕЙ..."
         else
-            loadingText.Text = "🔥 АКТИВАЦИЯ RYZEN..."
+            loadingText.Text = "🔥 АКТИВАЦИЯ wxi..."
         end
     end
     loadingText.Text = "✅ ГОТОВО!"
     task.wait(0.3)
-    
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    local tweenInfo = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     TweenService:Create(loadingFrame, tweenInfo, {BackgroundTransparency = 1}):Play()
     TweenService:Create(loadingText, tweenInfo, {TextTransparency = 1}):Play()
     TweenService:Create(progressBar, tweenInfo, {BackgroundTransparency = 1}):Play()
     TweenService:Create(progressText, tweenInfo, {TextTransparency = 1}):Play()
-    
-    task.wait(0.5)
+
+    task.wait(0.4)
     loadingFrame:Destroy()
     passwordFrame.Visible = true
 end
@@ -368,9 +381,9 @@ submitBtn.MouseButton1Click:Connect(function()
     if textBox.Text == "ryzen2025" then
         passwordFrame:Destroy()
         mainFrame.Visible = true
-        
+
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "⚡ RYZEN CORE",
+            Title = "⚡ wxi CORE",
             Text = "✅ ДОСТУП РАЗРЕШЕН! ПАНЕЛЬ АКТИВИРОВАНА.",
             Duration = 3
         })
@@ -396,7 +409,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 45)
 title.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
 title.BorderSizePixel = 0
-title.Text = "⚡ RYZEN PANEL ⚡"
+title.Text = "⚡ wxi PANEL ⚡"
 title.TextColor3 = Color3.fromRGB(200, 0, 0)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
@@ -423,7 +436,7 @@ layout.Parent = scroll
 local function executeServerCode(code)
     task.spawn(function()
         pcall(function()
-            ryzenCore.Execute(code)
+            wxiCore.Execute(code)
         end)
     end)
 end
@@ -438,11 +451,11 @@ local function createButton(text, callback, order)
     btn.TextSize = 14
     btn.LayoutOrder = order
     btn.Parent = scroll
-    
+
     local btnCorner = Instance.new("UICorner")
     btnCorner.CornerRadius = UDim.new(0, 6)
     btnCorner.Parent = btn
-    
+
     btn.MouseEnter:Connect(function()
         btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
     end)
@@ -494,12 +507,12 @@ createButton("🌋 СОЗДАТЬ КАРТУ АПОКАЛИПСИСА", function
     })
 end, 1)
 
-createButton("👹 ПРИЗВАТЬ RYZEN БОССА", function()
+createButton("👹 ПРИЗВАТЬ wxi БОССА", function()
     executeServerCode([[
-        local old = game.Workspace:FindFirstChild("Ryzen_BOSS")
+        local old = game.Workspace:FindFirstChild("wxi_BOSS")
         if old then old:Destroy() end
         local boss = Instance.new("Model", game.Workspace)
-        boss.Name = "Ryzen_BOSS"
+        boss.Name = "wxi_BOSS"
         local body = Instance.new("Part", boss)
         body.Size = Vector3.new(5,5,5)
         body.Position = Vector3.new(0,2.5,0)
@@ -520,14 +533,14 @@ createButton("👹 ПРИЗВАТЬ RYZEN БОССА", function()
         local label = Instance.new("TextLabel", bill)
         label.Size = UDim2.new(1,0,1,0)
         label.BackgroundTransparency = 1
-        label.Text = "🔥 RYZEN BOSS 🔥"
+        label.Text = "🔥 wxi BOSS 🔥"
         label.TextColor3 = Color3.fromRGB(255,0,0)
         label.TextScaled = true
         label.Font = Enum.Font.GothamBold
     ]])
     game:GetService("StarterGui"):SetCore("SendNotification", {
         Title = "👹 БОСС",
-        Text = "Ryzen Босс призван!",
+        Text = "wxi Босс призван!",
         Duration = 3
     })
 end, 2)
@@ -535,7 +548,7 @@ end, 2)
 createButton("🔫 ПОЛУЧИТЬ AK-47", function()
     executeServerCode([[
         local tool = Instance.new("Tool")
-        tool.Name = "AK-47 [Ryzen]"
+        tool.Name = "AK-47 [wxi]"
         tool.RequiresHandle = true
         tool.Parent = game.Players.LocalPlayer.Backpack
         local handle = Instance.new("Part", tool)
@@ -580,7 +593,7 @@ end, 5)
 createButton("🎮 СПАВН ТАНКА", function()
     executeServerCode([[
         local tank = Instance.new("Model", game.Workspace)
-        tank.Name = "RyzenTank"
+        tank.Name = "wxiTank"
         local body = Instance.new("Part", tank)
         body.Size = Vector3.new(8,2,5)
         body.BrickColor = BrickColor.new("Dark green")
@@ -613,7 +626,7 @@ createButton("👢 КИКНУТЬ ВСЕХ", function()
         local player = game.Players.LocalPlayer
         for _, plr in pairs(game.Players:GetPlayers()) do
             if plr ~= player then
-                plr:Kick("💀 KICKED BY RYZEN SYSTEM")
+                plr:Kick("💀 KICKED BY wxi SYSTEM")
             end
         end
     ]])
@@ -659,4 +672,4 @@ end)
 
 task.spawn(animateLoading)
 
-print("✅ RYZEN ULTIMATE v13.0 ACTIVE [FIXED]")
+print("✅ wxi ULTIMATE v13.0 ACTIVE [FIXED]")
