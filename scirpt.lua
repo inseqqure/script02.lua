@@ -1,4 +1,4 @@
--- RYZEN ULTIMATE v13.0 - ПОЛНОСТЬЮ РАБОЧАЯ ВЕРСИЯ
+-- RYZEN ULTIMATE v13.0 - РАБОЧАЯ ВЕРСИЯ С ТЕЛЕПОРТАМИ
 -- Пароль: ryzen2025
 
 local Players = game:GetService("Players")
@@ -6,10 +6,11 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- ============================================================
--- 1. РАБОЧИЕ ФУНКЦИИ
+-- 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
 -- ============================================================
 
 local function notify(title, text)
@@ -20,64 +21,83 @@ local function notify(title, text)
     })
 end
 
--- СОЗДАНИЕ НОВОЙ КАРТЫ (РАБОТАЕТ!)
-local function createApocalypseMap()
-    -- Удаляем старую карту
-    for _, v in pairs(game.Workspace:GetChildren()) do
-        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
-            pcall(function() v:Destroy() end)
-        end
+-- Получение позиции игрока
+local function getPlayerPosition()
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        return char.HumanoidRootPart.Position
     end
-    
-    -- Создаем землю
-    local ground = Instance.new("Part")
-    ground.Size = Vector3.new(250, 1, 250)
-    ground.Position = Vector3.new(0, -0.5, 0)
-    ground.BrickColor = BrickColor.new("Really black")
-    ground.Anchored = true
-    ground.Parent = game.Workspace
-    
-    -- Создаем кровавые пятна
-    for i = 1, 50 do
-        local blood = Instance.new("Part")
-        blood.Size = Vector3.new(math.random(1, 5), 0.1, math.random(1, 5))
-        blood.Position = Vector3.new(math.random(-120, 120), 0, math.random(-120, 120))
-        blood.BrickColor = BrickColor.new("Bright red")
-        blood.Anchored = true
-        blood.Parent = game.Workspace
-    end
-    
-    -- Меняем небо
-    local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-    sky.SkyboxBk = "rbxassetid://15050311563"
-    sky.SkyboxDn = "rbxassetid://15050311563"
-    sky.SkyboxLf = "rbxassetid://15050311563"
-    sky.SkyboxRt = "rbxassetid://15050311563"
-    sky.SkyboxUp = "rbxassetid://15050311563"
-    Lighting.FogColor = Color3.fromRGB(200, 50, 50)
-    Lighting.FogEnd = 250
-    Lighting.Brightness = 1.5
-    
-    notify("🌋 КАРТА", "Апокалипсис-карта создана!")
+    return Vector3.new(0, 0, 0)
 end
 
--- ПРИЗЫВ БОССА (РАБОТАЕТ!)
-local function spawnBoss()
-    local old = game.Workspace:FindFirstChild("Ryzen_BOSS")
-    if old then old:Destroy() end
+-- Телепорт игрока
+local function teleportPlayer(pos)
+    local char = player.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = CFrame.new(pos)
+        notify("📍 ТЕЛЕПОРТ", "Телепорт выполнен!")
+    end
+end
+
+-- ============================================================
+-- 2. РАБОЧИЕ ФУНКЦИИ
+-- ============================================================
+
+-- СОЗДАНИЕ КАРТЫ (С ТЕЛЕПОРТОМ)
+local function createApocalypseMap()
+    -- Телепортируем игрока на новую карту
+    teleportPlayer(Vector3.new(0, 5, 0))
     
+    -- Создаем визуальные эффекты (только для игрока)
+    local effects = Instance.new("Folder")
+    effects.Name = "RyzenEffects"
+    effects.Parent = player
+    
+    -- Создаем партиклы вокруг игрока
+    for i = 1, 50 do
+        local part = Instance.new("Part")
+        part.Size = Vector3.new(0.3, 0.3, 0.3)
+        part.Position = getPlayerPosition() + Vector3.new(math.random(-20, 20), math.random(-10, 30), math.random(-20, 20))
+        part.BrickColor = BrickColor.new("Bright red")
+        part.Material = Enum.Material.Neon
+        part.Anchored = true
+        part.CanCollide = false
+        part.Parent = effects
+        Debris:AddItem(part, 3)
+    end
+    
+    -- Меняем небо (только локально)
+    pcall(function()
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+        sky.SkyboxBk = "rbxassetid://15050311563"
+        sky.SkyboxDn = "rbxassetid://15050311563"
+        sky.SkyboxLf = "rbxassetid://15050311563"
+        sky.SkyboxRt = "rbxassetid://15050311563"
+        sky.SkyboxUp = "rbxassetid://15050311563"
+        Lighting.FogColor = Color3.fromRGB(200, 50, 50)
+        Lighting.FogEnd = 250
+        Lighting.Brightness = 1.5
+    end)
+    
+    notify("🌋 КАРТА", "Вы телепортированы на апокалипсис-карту!")
+end
+
+-- ПРИЗЫВ БОССА (ВОКРУГ ИГРОКА)
+local function spawnBoss()
+    local pos = getPlayerPosition()
     local boss = Instance.new("Model")
     boss.Name = "Ryzen_BOSS"
     boss.Parent = game.Workspace
     
     local body = Instance.new("Part")
     body.Size = Vector3.new(5, 5, 5)
-    body.Position = Vector3.new(0, 2.5, 0)
+    body.Position = pos + Vector3.new(0, 2.5, 10)
     body.BrickColor = BrickColor.new("Really black")
     body.Anchored = true
+    body.CanCollide = false
     body.Parent = boss
     
-    -- Глаза босса (светятся)
+    -- Глаза
     for i = -1, 1, 2 do
         local eye = Instance.new("Part")
         eye.Size = Vector3.new(0.4, 0.4, 0.4)
@@ -85,10 +105,11 @@ local function spawnBoss()
         eye.BrickColor = BrickColor.new("Bright red")
         eye.Material = Enum.Material.Neon
         eye.Anchored = true
+        eye.CanCollide = false
         eye.Parent = boss
     end
     
-    -- Надпись над боссом
+    -- Надпись
     local bill = Instance.new("BillboardGui")
     bill.Size = UDim2.new(0, 6, 0, 1.5)
     bill.StudsOffset = Vector3.new(0, 3.5, 0)
@@ -104,41 +125,13 @@ local function spawnBoss()
     label.Font = Enum.Font.GothamBold
     label.Parent = bill
     
-    notify("👹 БОСС", "Ryzen Босс призван!")
+    Debris:AddItem(boss, 30)
+    notify("👹 БОСС", "Босс призван рядом с вами!")
 end
 
--- СОЗДАНИЕ АК-47 (РАБОТАЕТ!)
-local function spawnAK47()
-    local tool = Instance.new("Tool")
-    tool.Name = "AK-47 [Ryzen]"
-    tool.RequiresHandle = true
-    tool.Parent = player.Backpack
-    
-    local handle = Instance.new("Part")
-    handle.Name = "Handle"
-    handle.Size = Vector3.new(1, 0.5, 2)
-    handle.BrickColor = BrickColor.new("Really black")
-    handle.Parent = tool
-    
-    -- Добавляем ствол
-    local barrel = Instance.new("Part")
-    barrel.Size = Vector3.new(0.2, 0.2, 1)
-    barrel.Position = Vector3.new(0, 0, 1.5)
-    barrel.BrickColor = BrickColor.new("Dark grey")
-    barrel.Parent = tool
-    
-    -- Добавляем приклад
-    local stock = Instance.new("Part")
-    stock.Size = Vector3.new(0.3, 0.2, 0.5)
-    stock.Position = Vector3.new(0, 0, -1)
-    stock.BrickColor = BrickColor.new("Brown")
-    stock.Parent = tool
-    
-    notify("🔫 ОРУЖИЕ", "AK-47 выдан!")
-end
-
--- ТАНК (РАБОТАЕТ!)
+-- ТАНК (ВОКРУГ ИГРОКА)
 local function spawnTank()
+    local pos = getPlayerPosition()
     local tank = Instance.new("Model")
     tank.Name = "RyzenTank"
     tank.Parent = game.Workspace
@@ -146,8 +139,9 @@ local function spawnTank()
     local body = Instance.new("Part")
     body.Size = Vector3.new(8, 2, 5)
     body.BrickColor = BrickColor.new("Dark green")
-    body.Position = player.Character.HumanoidRootPart.Position + Vector3.new(0, 1, 10)
+    body.Position = pos + Vector3.new(0, 1, 8)
     body.Anchored = true
+    body.CanCollide = false
     body.Parent = tank
     
     local turret = Instance.new("Part")
@@ -155,57 +149,77 @@ local function spawnTank()
     turret.BrickColor = BrickColor.new("Dark green")
     turret.Position = body.Position + Vector3.new(0, 2, 0)
     turret.Anchored = true
+    turret.CanCollide = false
     turret.Parent = tank
     
-    -- Гусеницы
-    for i = -1, 1, 2 do
-        local track = Instance.new("Part")
-        track.Size = Vector3.new(1.5, 0.5, 5)
-        track.BrickColor = BrickColor.new("Dark grey")
-        track.Position = body.Position + Vector3.new(i * 4.5, -1, 0)
-        track.Anchored = true
-        track.Parent = tank
-    end
-    
     Debris:AddItem(tank, 60)
-    notify("🎮 ТАНК", "Танк создан!")
+    notify("🎮 ТАНК", "Танк создан рядом с вами!")
 end
 
--- ИЗМЕНЕНИЕ НЕБА (РАБОТАЕТ!)
+-- КРОВАВОЕ НЕБО (РАБОТАЕТ!)
 local function changeSky()
-    local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-    sky.SkyboxBk = "rbxassetid://15050311563"
-    sky.SkyboxDn = "rbxassetid://15050311563"
-    sky.SkyboxLf = "rbxassetid://15050311563"
-    sky.SkyboxRt = "rbxassetid://15050311563"
-    sky.SkyboxUp = "rbxassetid://15050311563"
-    Lighting.FogColor = Color3.fromRGB(200, 50, 50)
-    Lighting.Brightness = 2
+    pcall(function()
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+        sky.SkyboxBk = "rbxassetid://15050311563"
+        sky.SkyboxDn = "rbxassetid://15050311563"
+        sky.SkyboxLf = "rbxassetid://15050311563"
+        sky.SkyboxRt = "rbxassetid://15050311563"
+        sky.SkyboxUp = "rbxassetid://15050311563"
+        Lighting.FogColor = Color3.fromRGB(200, 50, 50)
+        Lighting.Brightness = 2
+        
+        -- Визуальный эффект
+        for i = 1, 20 do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(0.5, 0.5, 0.5)
+            part.Position = getPlayerPosition() + Vector3.new(math.random(-30, 30), math.random(0, 40), math.random(-30, 30))
+            part.BrickColor = BrickColor.new("Bright red")
+            part.Material = Enum.Material.Neon
+            part.Anchored = true
+            part.CanCollide = false
+            part.Parent = game.Workspace
+            Debris:AddItem(part, 2)
+        end
+    end)
     notify("🌅 НЕБО", "Кровавое небо активировано!")
 end
 
--- УНИЧТОЖЕНИЕ КАРТЫ (РАБОТАЕТ!)
+-- УНИЧТОЖИТЬ КАРТУ (Удаляем объекты вокруг игрока)
 local function destroyMap()
+    local pos = getPlayerPosition()
+    local count = 0
+    
     for _, v in pairs(game.Workspace:GetChildren()) do
-        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
-            pcall(function() v:Destroy() end)
+        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) and not v.Name:match("Ryzen") then
+            pcall(function()
+                if v.Position and (v.Position - pos).Magnitude < 100 then
+                    v:Destroy()
+                    count = count + 1
+                end
+            end)
         end
     end
-    notify("💀 КАРТА", "Карта уничтожена!")
+    
+    notify("💀 КАРТА", "Уничтожено " .. count .. " объектов вокруг вас!")
 end
 
--- КИК ВСЕХ (РАБОТАЕТ ТОЛЬКО В НЕКОТОРЫХ ИГРАХ)
-local function kickAll()
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player then
-            pcall(function() plr:Kick("💀 KICKED BY RYZEN SYSTEM") end)
-        end
-    end
-    notify("👢 КИК", "Все игроки кикнуты!")
+-- ТЕЛЕПОРТЫ
+local function teleportToSky()
+    teleportPlayer(Vector3.new(0, 500, 0))
+end
+
+local function teleportToGround()
+    teleportPlayer(Vector3.new(0, 5, 0))
+end
+
+local function teleportRandom()
+    local x = math.random(-200, 200)
+    local z = math.random(-200, 200)
+    teleportPlayer(Vector3.new(x, 5, z))
 end
 
 -- ============================================================
--- 2. СОЗДАНИЕ GUI
+-- 3. СОЗДАНИЕ GUI
 -- ============================================================
 
 local function createGUI()
@@ -214,7 +228,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
     gui.Parent = player.PlayerGui
 
-    -- Загрузочный экран (маленький)
+    -- ЗАГРУЗОЧНЫЙ ЭКРАН
     local loadingFrame = Instance.new("Frame")
     loadingFrame.Size = UDim2.new(0, 300, 0, 160)
     loadingFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
@@ -263,7 +277,7 @@ local function createGUI()
     progressText.ZIndex = 11
     progressText.Parent = loadingFrame
 
-    -- Окно пароля
+    -- ОКНО ПАРОЛЯ
     local passwordFrame = Instance.new("Frame")
     passwordFrame.Size = UDim2.new(0, 320, 0, 200)
     passwordFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
@@ -289,17 +303,6 @@ local function createGUI()
     passTitle.ZIndex = 6
     passTitle.Parent = passwordFrame
 
-    local passSubtitle = Instance.new("TextLabel")
-    passSubtitle.Size = UDim2.new(1, 0, 0, 30)
-    passSubtitle.Position = UDim2.new(0, 0, 0, 50)
-    passSubtitle.BackgroundTransparency = 1
-    passSubtitle.Text = "Введите пароль для доступа"
-    passSubtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-    passSubtitle.Font = Enum.Font.Gotham
-    passSubtitle.TextSize = 14
-    passSubtitle.ZIndex = 6
-    passSubtitle.Parent = passwordFrame
-
     local textBox = Instance.new("TextBox")
     textBox.Size = UDim2.new(0.8, 0, 0, 40)
     textBox.Position = UDim2.new(0.1, 0, 0.45, 0)
@@ -324,10 +327,10 @@ local function createGUI()
     submitBtn.ZIndex = 6
     submitBtn.Parent = passwordFrame
 
-    -- Главная панель
+    -- ГЛАВНАЯ ПАНЕЛЬ
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 340, 0, 500)
-    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -250)
+    mainFrame.Size = UDim2.new(0, 340, 0, 520)
+    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -260)
     mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     mainFrame.BorderSizePixel = 2
     mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
@@ -355,7 +358,7 @@ local function createGUI()
     scroll.Position = UDim2.new(0, 5, 0, 50)
     scroll.BackgroundTransparency = 1
     scroll.BorderSizePixel = 0
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 650)
     scroll.ScrollBarThickness = 6
     scroll.Parent = mainFrame
 
@@ -365,17 +368,17 @@ local function createGUI()
     layout.Parent = scroll
 
     -- ============================================================
-    -- 3. СОЗДАНИЕ КНОПОК
+    -- 4. СОЗДАНИЕ КНОПОК
     -- ============================================================
 
     local function createButton(text, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -10, 0, 40)
+        btn.Size = UDim2.new(1, -10, 0, 38)
         btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
         btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 14
+        btn.TextSize = 13
         btn.Parent = scroll
 
         local btnCorner = Instance.new("UICorner")
@@ -395,19 +398,15 @@ local function createGUI()
     end
 
     -- ============================================================
-    -- 4. КНОПКИ С ФУНКЦИЯМИ (ВСЕ РАБОТАЮТ!)
+    -- 5. КНОПКИ С ФУНКЦИЯМИ
     -- ============================================================
 
-    createButton("🌋 СОЗДАТЬ КАРТУ АПОКАЛИПСИСА", function()
+    createButton("🌋 КАРТА АПОКАЛИПСИСА (С ТЕЛЕПОРТОМ)", function()
         createApocalypseMap()
     end)
 
     createButton("👹 ПРИЗВАТЬ RYZEN БОССА", function()
         spawnBoss()
-    end)
-
-    createButton("🔫 ПОЛУЧИТЬ AK-47", function()
-        spawnAK47()
     end)
 
     createButton("🎮 СПАВН ТАНКА", function()
@@ -422,8 +421,16 @@ local function createGUI()
         destroyMap()
     end)
 
-    createButton("👢 КИКНУТЬ ВСЕХ", function()
-        kickAll()
+    createButton("☁️ ТЕЛЕПОРТ В НЕБО", function()
+        teleportToSky()
+    end)
+
+    createButton("🌍 ТЕЛЕПОРТ НА ЗЕМЛЮ", function()
+        teleportToGround()
+    end)
+
+    createButton("🎲 СЛУЧАЙНЫЙ ТЕЛЕПОРТ", function()
+        teleportRandom()
     end)
 
     createButton("💀 БЕССМЕРТИЕ", function()
@@ -463,6 +470,20 @@ local function createGUI()
         end
     end)
 
+    createButton("🔫 ПОЛУЧИТЬ ОРУЖИЕ", function()
+        local tool = Instance.new("Tool")
+        tool.Name = "Ryzen_Weapon"
+        tool.RequiresHandle = true
+        tool.Parent = player.Backpack
+        
+        local handle = Instance.new("Part")
+        handle.Name = "Handle"
+        handle.Size = Vector3.new(1, 0.5, 2)
+        handle.BrickColor = BrickColor.new("Really black")
+        handle.Parent = tool
+        notify("🔫 ОРУЖИЕ", "Оружие выдано!")
+    end)
+
     createButton("👑 ВИЗУАЛЬНАЯ АДМИНКА", function()
         for _, plr in pairs(Players:GetPlayers()) do
             plr.DisplayName = "[ADMIN] " .. plr.DisplayName
@@ -487,7 +508,7 @@ local function createGUI()
     end)
 
     -- ============================================================
-    -- 5. ЛОГИКА ЗАПУСКА
+    -- 6. ЛОГИКА ЗАПУСКА
     -- ============================================================
 
     local function animateLoading()
@@ -543,8 +564,8 @@ local function createGUI()
 end
 
 -- ============================================================
--- 6. ЗАПУСК
+-- 7. ЗАПУСК
 -- ============================================================
 
 pcall(createGUI)
-print("✅ RYZEN ULTIMATE v13.0 [ПОЛНАЯ ВЕРСИЯ] ЗАПУЩЕНА!")
+print("✅ RYZEN ULTIMATE v13.0 [С ТЕЛЕПОРТАМИ] ЗАПУЩЕНА!")
