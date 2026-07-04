@@ -1,1 +1,1 @@
-# script02.lua
+# script.lua
