@@ -1,460 +1,356 @@
 -- ============================================================
--- RYZEN ULTIMATE v13.0 - ФОРСИРОВАННЫЙ ЗАПУСК
+-- RYZEN ULTIMATE v13.0 - ПРОСТАЯ РАБОЧАЯ ВЕРСИЯ
 -- Пароль: ryzen2025
 -- ============================================================
 
-local Players = game:GetService("Players")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local Debris = game:GetService("Debris")
-local HttpService = game:GetService("HttpService")
-local StarterGui = game:GetService("StarterGui")
-local Chat = game:GetService("Chat")
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
 
-local player = Players.LocalPlayer
-local camera = Workspace.CurrentCamera
+-- ============================================================
+-- 1. ЗАГРУЗОЧНЫЙ ЭКРАН (ОГРОМНЫЙ, ЧТОБЫ ТОЧНО УВИДЕТЬ)
+-- ============================================================
 
-local function notify(title, text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = 3
-        })
-    end)
+local loadFrame = Instance.new("Frame")
+loadFrame.Size = UDim2.new(1, 0, 1, 0)
+loadFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+loadFrame.ZIndex = 999
+loadFrame.Parent = gui
+
+local loadText = Instance.new("TextLabel")
+loadText.Size = UDim2.new(1, 0, 0.3, 0)
+loadText.Position = UDim2.new(0, 0, 0.35, 0)
+loadText.BackgroundTransparency = 1
+loadText.Text = "⚡ ЗАГРУЗКА RYZEN..."
+loadText.TextColor3 = Color3.fromRGB(255, 0, 0)
+loadText.Font = Enum.Font.GothamBold
+loadText.TextSize = 50
+loadText.ZIndex = 1000
+loadText.Parent = loadFrame
+
+local loadBar = Instance.new("Frame")
+loadBar.Size = UDim2.new(0.6, 0, 0.05, 0)
+loadBar.Position = UDim2.new(0.2, 0, 0.5, 0)
+loadBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+loadBar.ZIndex = 1000
+loadBar.Parent = loadFrame
+
+local loadFill = Instance.new("Frame")
+loadFill.Size = UDim2.new(0, 0, 1, 0)
+loadFill.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+loadFill.ZIndex = 1001
+loadFill.Parent = loadBar
+
+local loadPercent = Instance.new("TextLabel")
+loadPercent.Size = UDim2.new(1, 0, 0.1, 0)
+loadPercent.Position = UDim2.new(0, 0, 0.58, 0)
+loadPercent.BackgroundTransparency = 1
+loadPercent.Text = "0%"
+loadPercent.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadPercent.Font = Enum.Font.GothamBold
+loadPercent.TextSize = 30
+loadPercent.ZIndex = 1000
+loadPercent.Parent = loadFrame
+
+-- ============================================================
+-- 2. АНИМАЦИЯ ЗАГРУЗКИ
+-- ============================================================
+
+for i = 1, 20 do
+    task.wait(0.1)
+    local progress = i / 20
+    loadFill.Size = UDim2.new(progress, 0, 1, 0)
+    loadPercent.Text = math.floor(progress * 100) .. "%"
+    
+    if progress < 0.3 then
+        loadText.Text = "🔐 ЗАЩИТА..."
+    elseif progress < 0.6 then
+        loadText.Text = "📡 ПОДКЛЮЧЕНИЕ..."
+    elseif progress < 0.8 then
+        loadText.Text = "⚡ МОДУЛИ..."
+    else
+        loadText.Text = "🔥 АКТИВАЦИЯ..."
+    end
 end
 
+loadText.Text = "✅ ГОТОВО!"
+loadPercent.Text = "100%"
+loadFill.Size = UDim2.new(1, 0, 1, 0)
+task.wait(0.5)
+
+loadFrame:Destroy()
+
 -- ============================================================
--- 0. ФОРСИРОВАННОЕ СОЗДАНИЕ GUI (ДАЖЕ ЕСЛИ ОШИБКИ)
+-- 3. ОКНО ПАРОЛЯ
 -- ============================================================
 
-local function createGUI()
-    print("🔧 СОЗДАНИЕ GUI...")
+local passFrame = Instance.new("Frame")
+passFrame.Size = UDim2.new(0, 400, 0, 250)
+passFrame.Position = UDim2.new(0.5, -200, 0.5, -125)
+passFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+passFrame.BorderSizePixel = 3
+passFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+passFrame.Parent = gui
+
+local passTitle = Instance.new("TextLabel")
+passTitle.Size = UDim2.new(1, 0, 0, 60)
+passTitle.Position = UDim2.new(0, 0, 0, 10)
+passTitle.BackgroundTransparency = 1
+passTitle.Text = "🔐 ВВЕДИТЕ ПАРОЛЬ"
+passTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+passTitle.Font = Enum.Font.GothamBold
+passTitle.TextSize = 24
+passTitle.Parent = passFrame
+
+local passBox = Instance.new("TextBox")
+passBox.Size = UDim2.new(0.8, 0, 0, 50)
+passBox.Position = UDim2.new(0.1, 0, 0.35, 0)
+passBox.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+passBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+passBox.PlaceholderText = "Введите пароль..."
+passBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+passBox.Text = ""
+passBox.Font = Enum.Font.Gotham
+passBox.TextSize = 20
+passBox.Parent = passFrame
+
+local passBtn = Instance.new("TextButton")
+passBtn.Size = UDim2.new(0.4, 0, 0, 50)
+passBtn.Position = UDim2.new(0.3, 0, 0.7, 0)
+passBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+passBtn.Text = "🔓 ВОЙТИ"
+passBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+passBtn.Font = Enum.Font.GothamBold
+passBtn.TextSize = 20
+passBtn.Parent = passFrame
+
+local function showMainMenu()
+    passFrame:Destroy()
     
-    -- Пробуем разные места для GUI
-    local guiParent = nil
-    
-    -- 1. Пробуем PlayerGui
-    pcall(function()
-        if player and player:FindFirstChild("PlayerGui") then
-            guiParent = player.PlayerGui
-        end
-    end)
-    
-    -- 2. Если не работает - пробуем CoreGui
-    if not guiParent then
-        pcall(function()
-            guiParent = game:GetService("CoreGui")
-        end)
-    end
-    
-    -- 3. Если ничего не работает - создаём новый
-    if not guiParent then
-        pcall(function()
-            guiParent = Instance.new("ScreenGui")
-            guiParent.Name = "RyzenGui"
-            guiParent.Parent = player
-        end)
-    end
-    
-    if not guiParent then
-        warn("❌ НЕ УДАЛОСЬ СОЗДАТЬ GUI!")
-        return
-    end
-    
-    print("✅ GUI создан в: " .. guiParent.Name)
-
-    -- ============================================================
-    -- 1. ЗАГРУЗОЧНЫЙ ЭКРАН (ВСЕГДА ПОЯВЛЯЕТСЯ)
-    -- ============================================================
-
-    local loadingFrame = Instance.new("Frame")
-    loadingFrame.Name = "LoadingFrame"
-    loadingFrame.Size = UDim2.new(0, 350, 0, 200)
-    loadingFrame.Position = UDim2.new(0.5, -175, 0.5, -100)
-    loadingFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
-    loadingFrame.BorderSizePixel = 3
-    loadingFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
-    loadingFrame.ZIndex = 999
-    loadingFrame.Parent = guiParent
-
-    local loadCorner = Instance.new("UICorner")
-    loadCorner.CornerRadius = UDim.new(0, 15)
-    loadCorner.Parent = loadingFrame
-
-    -- Логотип
-    local logo = Instance.new("TextLabel")
-    logo.Size = UDim2.new(1, 0, 0, 60)
-    logo.Position = UDim2.new(0, 0, 0, 15)
-    logo.BackgroundTransparency = 1
-    logo.Text = "⚡ RYZEN ULTIMATE ⚡"
-    logo.TextColor3 = Color3.fromRGB(200, 0, 0)
-    logo.Font = Enum.Font.GothamBold
-    logo.TextSize = 28
-    logo.ZIndex = 1000
-    logo.Parent = loadingFrame
-
-    local loadingText = Instance.new("TextLabel")
-    loadingText.Size = UDim2.new(0.9, 0, 0.2, 0)
-    loadingText.Position = UDim2.new(0.05, 0, 0.35, 0)
-    loadingText.BackgroundTransparency = 1
-    loadingText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ..."
-    loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-    loadingText.Font = Enum.Font.Gotham
-    loadingText.TextSize = 16
-    loadingText.ZIndex = 1001
-    loadingText.Parent = loadingFrame
-
-    local progressBar = Instance.new("Frame")
-    progressBar.Size = UDim2.new(0.8, 0, 0.06, 0)
-    progressBar.Position = UDim2.new(0.1, 0, 0.6, 0)
-    progressBar.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-    progressBar.ZIndex = 1001
-    progressBar.Parent = loadingFrame
-
-    local progressCorner = Instance.new("UICorner")
-    progressCorner.CornerRadius = UDim.new(0, 4)
-    progressCorner.Parent = progressBar
-
-    local progressFill = Instance.new("Frame")
-    progressFill.Size = UDim2.new(0, 0, 1, 0)
-    progressFill.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-    progressFill.ZIndex = 1002
-    progressFill.Parent = progressBar
-
-    local fillCorner = Instance.new("UICorner")
-    fillCorner.CornerRadius = UDim.new(0, 4)
-    fillCorner.Parent = progressFill
-
-    local progressText = Instance.new("TextLabel")
-    progressText.Size = UDim2.new(1, 0, 0.2, 0)
-    progressText.Position = UDim2.new(0, 0, 0.75, 0)
-    progressText.BackgroundTransparency = 1
-    progressText.Text = "0%"
-    progressText.TextColor3 = Color3.fromRGB(200, 200, 200)
-    progressText.Font = Enum.Font.Gotham
-    progressText.TextSize = 14
-    progressText.ZIndex = 1001
-    progressText.Parent = loadingFrame
-
-    -- ============================================================
-    -- 2. АНИМАЦИЯ ЗАГРУЗКИ (100% ВИДИМА)
-    -- ============================================================
-
-    local function animateLoading()
-        local steps = 30
-        for i = 1, steps do
-            task.wait(0.05)
-            local progress = i / steps
-            progressFill.Size = UDim2.new(progress, 0, 1, 0)
-            progressText.Text = math.floor(progress * 100) .. "%"
-            
-            if progress < 0.25 then
-                loadingText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ ЗАЩИТЫ..."
-            elseif progress < 0.5 then
-                loadingText.Text = "📡 ПОДКЛЮЧЕНИЕ К СЕРВЕРУ..."
-            elseif progress < 0.75 then
-                loadingText.Text = "⚡ ЗАГРУЗКА МОДУЛЕЙ..."
-            else
-                loadingText.Text = "🔥 АКТИВАЦИЯ RYZEN..."
-            end
-        end
-        
-        loadingText.Text = "✅ ГОТОВО!"
-        progressText.Text = "100%"
-        progressFill.Size = UDim2.new(1, 0, 1, 0)
-        
-        task.wait(0.5)
-        
-        -- Плавное исчезновение
-        local tween = TweenService:Create(loadingFrame, TweenInfo.new(0.5), {
-            BackgroundTransparency = 1
-        })
-        tween:Play()
-        tween.Completed:Wait()
-        
-        loadingFrame:Destroy()
-        showPassword()
-    end
-
-    -- ============================================================
-    -- 3. ОКНО ПАРОЛЯ
-    -- ============================================================
-
-    local function showPassword()
-        local passwordFrame = Instance.new("Frame")
-        passwordFrame.Size = UDim2.new(0, 340, 0, 220)
-        passwordFrame.Position = UDim2.new(0.5, -170, 0.5, -110)
-        passwordFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 30)
-        passwordFrame.BorderSizePixel = 2
-        passwordFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
-        passwordFrame.ZIndex = 5
-        passwordFrame.Parent = guiParent
-
-        local passCorner = Instance.new("UICorner")
-        passCorner.CornerRadius = UDim.new(0, 10)
-        passCorner.Parent = passwordFrame
-
-        local passTitle = Instance.new("TextLabel")
-        passTitle.Size = UDim2.new(1, 0, 0, 50)
-        passTitle.Position = UDim2.new(0, 0, 0, 10)
-        passTitle.BackgroundTransparency = 1
-        passTitle.Text = "🔐 АВТОРИЗАЦИЯ"
-        passTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
-        passTitle.Font = Enum.Font.GothamBold
-        passTitle.TextSize = 20
-        passTitle.ZIndex = 6
-        passTitle.Parent = passwordFrame
-
-        local passSub = Instance.new("TextLabel")
-        passSub.Size = UDim2.new(1, 0, 0, 25)
-        passSub.Position = UDim2.new(0, 0, 0, 60)
-        passSub.BackgroundTransparency = 1
-        passSub.Text = "Введите пароль для доступа"
-        passSub.TextColor3 = Color3.fromRGB(150, 150, 150)
-        passSub.Font = Enum.Font.Gotham
-        passSub.TextSize = 14
-        passSub.ZIndex = 6
-        passSub.Parent = passwordFrame
-
-        local textBox = Instance.new("TextBox")
-        textBox.Size = UDim2.new(0.8, 0, 0, 40)
-        textBox.Position = UDim2.new(0.1, 0, 0.45, 0)
-        textBox.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
-        textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-        textBox.PlaceholderText = "Введите пароль..."
-        textBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-        textBox.Text = ""
-        textBox.Font = Enum.Font.Gotham
-        textBox.TextSize = 16
-        textBox.ZIndex = 6
-        textBox.Parent = passwordFrame
-
-        local textCorner = Instance.new("UICorner")
-        textCorner.CornerRadius = UDim.new(0, 6)
-        textCorner.Parent = textBox
-
-        local submitBtn = Instance.new("TextButton")
-        submitBtn.Size = UDim2.new(0.4, 0, 0, 40)
-        submitBtn.Position = UDim2.new(0.3, 0, 0.75, 0)
-        submitBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-        submitBtn.Text = "🔓 ВОЙТИ"
-        submitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        submitBtn.Font = Enum.Font.GothamBold
-        submitBtn.TextSize = 16
-        submitBtn.ZIndex = 6
-        submitBtn.Parent = passwordFrame
-
-        local btnCorner = Instance.new("UICorner")
-        btnCorner.CornerRadius = UDim.new(0, 6)
-        btnCorner.Parent = submitBtn
-
-        submitBtn.MouseButton1Click:Connect(function()
-            if textBox.Text == "ryzen2025" then
-                passwordFrame:Destroy()
-                showMainMenu()
-                notify("⚡", "✅ ДОСТУП РАЗРЕШЕН!")
-            else
-                textBox.Text = ""
-                textBox.PlaceholderText = "❌ НЕВЕРНЫЙ ПАРОЛЬ!"
-                textBox.PlaceholderColor3 = Color3.fromRGB(255, 0, 0)
-                task.wait(1.5)
-                textBox.PlaceholderText = "Введите пароль..."
-                textBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
-            end
-        end)
-
-        textBox.FocusLost:Connect(function(enterPressed)
-            if enterPressed then submitBtn.MouseButton1Click:Fire() end
-        end)
-    end
-
     -- ============================================================
     -- 4. ГЛАВНОЕ МЕНЮ
     -- ============================================================
-
-    local function showMainMenu()
-        local mainFrame = Instance.new("Frame")
-        mainFrame.Size = UDim2.new(0, 360, 0, 500)
-        mainFrame.Position = UDim2.new(0.5, -180, 0.5, -250)
-        mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-        mainFrame.BorderSizePixel = 2
-        mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
-        mainFrame.Active = true
-        mainFrame.Draggable = true
-        mainFrame.Parent = guiParent
-
-        local mainCorner = Instance.new("UICorner")
-        mainCorner.CornerRadius = UDim.new(0, 10)
-        mainCorner.Parent = mainFrame
-
-        local title = Instance.new("TextLabel")
-        title.Size = UDim2.new(1, 0, 0, 45)
-        title.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
-        title.BorderSizePixel = 0
-        title.Text = "⚡ RYZEN PANEL ⚡"
-        title.TextColor3 = Color3.fromRGB(200, 0, 0)
-        title.Font = Enum.Font.GothamBold
-        title.TextSize = 18
-        title.Parent = mainFrame
-
-        local scroll = Instance.new("ScrollingFrame")
-        scroll.Size = UDim2.new(1, -10, 1, -55)
-        scroll.Position = UDim2.new(0, 5, 0, 50)
-        scroll.BackgroundTransparency = 1
-        scroll.BorderSizePixel = 0
-        scroll.CanvasSize = UDim2.new(0, 0, 0, 700)
-        scroll.ScrollBarThickness = 6
-        scroll.Parent = mainFrame
-
-        local layout = Instance.new("UIListLayout")
-        layout.Padding = UDim.new(0, 6)
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        layout.Parent = scroll
-
-        -- Функция создания кнопок
-        local function createButton(text, callback)
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, -10, 0, 40)
+    
+    local main = Instance.new("Frame")
+    main.Size = UDim2.new(0, 400, 0, 500)
+    main.Position = UDim2.new(0.5, -200, 0.5, -250)
+    main.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    main.BorderSizePixel = 3
+    main.BorderColor3 = Color3.fromRGB(200, 0, 0)
+    main.Active = true
+    main.Draggable = true
+    main.Parent = gui
+    
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 50)
+    title.BackgroundColor3 = Color3.fromRGB(30, 30, 50)
+    title.Text = "⚡ RYZEN PANEL ⚡"
+    title.TextColor3 = Color3.fromRGB(200, 0, 0)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 22
+    title.Parent = main
+    
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -10, 1, -60)
+    scroll.Position = UDim2.new(0, 5, 0, 55)
+    scroll.BackgroundTransparency = 1
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 600)
+    scroll.ScrollBarThickness = 6
+    scroll.Parent = main
+    
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = scroll
+    
+    local function addButton(text, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -10, 0, 45)
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+        btn.Text = text
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 16
+        btn.Parent = scroll
+        
+        btn.MouseEnter:Connect(function()
+            btn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+        end)
+        btn.MouseLeave:Connect(function()
             btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-            btn.Text = text
-            btn.TextColor3 = Color3.fromRGB(240, 240, 240)
-            btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 14
-            btn.Parent = scroll
-
-            local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 6)
-            btnCorner.Parent = btn
-
-            btn.MouseEnter:Connect(function()
-                btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
-            end)
-            btn.MouseLeave:Connect(function()
-                btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
-            end)
-            btn.MouseButton1Click:Connect(function()
-                pcall(callback)
-            end)
-            return btn
-        end
-
-        -- ВРЕМЕННЫЕ ФУНКЦИИ (заглушки)
-        local function tempNotify(text)
-            notify("✅", text)
-        end
-
-        -- КНОПКИ
-        createButton("🔥 ВСЁ КРАСНОЕ", function()
-            tempNotify("Всё красное!")
-            -- здесь будет код из основного скрипта
         end)
-
-        createButton("😱 СКРИМЕР", function()
-            tempNotify("Скример!")
-        end)
-
-        createButton("💃 ТАНЕЦ", function()
-            tempNotify("Танец!")
-        end)
-
-        createButton("📷 ТРЯСКА", function()
-            tempNotify("Тряска!")
-        end)
-
-        createButton("🔄 ПЕРЕВОРОТ", function()
-            tempNotify("Переворот!")
-        end)
-
-        createButton("👨 СКИН ГИТЛЕРА", function()
-            tempNotify("Скин Гитлера!")
-        end)
-
-        createButton("💀 БЕССМЕРТИЕ", function()
-            local char = player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.MaxHealth = math.huge
-                char.Humanoid.Health = math.huge
-                notify("💀", "Бессмертие!")
-            end
-        end)
-
-        createButton("💨 СКОРОСТЬ 120", function()
-            local char = player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.WalkSpeed = 120
-                notify("💨", "Скорость 120!")
-            end
-        end)
-
-        createButton("⬆️ ПРЫЖОК 200", function()
-            local char = player.Character
-            if char and char:FindFirstChild("Humanoid") then
-                char.Humanoid.JumpPower = 200
-                notify("⬆️", "Прыжок 200!")
-            end
-        end)
-
-        createButton("👻 НЕВИДИМОСТЬ", function()
-            local char = player.Character
-            if char then
-                for _, p in pairs(char:GetDescendants()) do
-                    if p:IsA("BasePart") then
-                        p.Transparency = 1
-                    end
-                end
-                notify("👻", "Невидимость!")
-            end
-        end)
-
-        -- Хоткей X
-        UserInputService.InputBegan:Connect(function(input, gpe)
-            if not gpe and input.KeyCode == Enum.KeyCode.X then
-                mainFrame.Visible = not mainFrame.Visible
-            end
-        end)
-
-        print("✅ МЕНЮ СОЗДАНО!")
+        btn.MouseButton1Click:Connect(callback)
     end
-
-    -- ============================================================
-    -- 5. ЗАПУСК
-    -- ============================================================
-
-    task.spawn(animateLoading)
+    
+    -- КНОПКИ
+    addButton("🔥 ВСЁ КРАСНОЕ", function()
+        for _, v in pairs(game.Workspace:GetChildren()) do
+            if v:IsA("BasePart") then
+                pcall(function() v.Color = Color3.fromRGB(200, 0, 0) end)
+            end
+        end
+        local sky = game.Lighting:FindFirstChild("Sky") or Instance.new("Sky", game.Lighting)
+        sky.SkyboxBk = "rbxassetid://15050311563"
+        sky.SkyboxDn = "rbxassetid://15050311563"
+        sky.SkyboxLf = "rbxassetid://15050311563"
+        sky.SkyboxRt = "rbxassetid://15050311563"
+        sky.SkyboxUp = "rbxassetid://15050311563"
+        game.Lighting.FogColor = Color3.fromRGB(200, 0, 0)
+    end)
+    
+    addButton("😱 СКРИМЕР", function()
+        local scr = Instance.new("Frame")
+        scr.Size = UDim2.new(1, 0, 1, 0)
+        scr.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        scr.ZIndex = 999
+        scr.Parent = gui
+        
+        local txt = Instance.new("TextLabel")
+        txt.Size = UDim2.new(1, 0, 1, 0)
+        txt.BackgroundTransparency = 1
+        txt.Text = "😱 RYZEN ATTACK! 😱"
+        txt.TextColor3 = Color3.fromRGB(255, 0, 0)
+        txt.Font = Enum.Font.GothamBlack
+        txt.TextSize = 80
+        txt.TextScaled = true
+        txt.ZIndex = 1000
+        txt.Parent = scr
+        
+        task.wait(2)
+        scr:Destroy()
+    end)
+    
+    addButton("💃 ТАНЕЦ", function()
+        for _, p in pairs(game.Players:GetPlayers()) do
+            local char = p.Character
+            if char and char:FindFirstChild("Humanoid") then
+                local anim = Instance.new("Animation")
+                anim.AnimationId = "rbxassetid://148840371"
+                local track = char.Humanoid:LoadAnimation(anim)
+                track:Play()
+                track.Looped = true
+            end
+        end
+    end)
+    
+    addButton("📷 ТРЯСКА", function()
+        local cam = game.Workspace.CurrentCamera
+        local orig = cam.CFrame
+        for i = 1, 30 do
+            cam.CFrame = orig * CFrame.new(
+                math.random(-20, 20)/10,
+                math.random(-20, 20)/10,
+                math.random(-20, 20)/10
+            )
+            task.wait(0.02)
+        end
+        cam.CFrame = orig
+    end)
+    
+    addButton("🔄 ПЕРЕВОРОТ", function()
+        local cam = game.Workspace.CurrentCamera
+        local orig = cam.CFrame
+        for i = 0, 180, 10 do
+            cam.CFrame = orig * CFrame.Angles(0, 0, math.rad(i))
+            task.wait(0.02)
+        end
+        task.wait(0.5)
+        for i = 180, 0, -10 do
+            cam.CFrame = orig * CFrame.Angles(0, 0, math.rad(i))
+            task.wait(0.02)
+        end
+        cam.CFrame = orig
+    end)
+    
+    addButton("👢 КИК ВСЕХ", function()
+        for _, p in pairs(game.Players:GetPlayers()) do
+            if p ~= game.Players.LocalPlayer then
+                pcall(function() p:Kick("KICKED BY RYZEN!") end)
+            end
+        end
+    end)
+    
+    addButton("💀 БЕССМЕРТИЕ", function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.MaxHealth = math.huge
+            char.Humanoid.Health = math.huge
+        end
+    end)
+    
+    addButton("💨 СКОРОСТЬ 120", function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 120
+        end
+    end)
+    
+    addButton("⬆️ ПРЫЖОК 200", function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpPower = 200
+        end
+    end)
+    
+    addButton("👻 НЕВИДИМОСТЬ", function()
+        local char = game.Players.LocalPlayer.Character
+        if char then
+            for _, p in pairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Transparency = 1
+                end
+            end
+        end
+    end)
+    
+    addButton("🔄 ВОССТАНОВИТЬ", function()
+        local char = game.Players.LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 16
+            char.Humanoid.JumpPower = 50
+            char.Humanoid.MaxHealth = 100
+            char.Humanoid.Health = 100
+            for _, p in pairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Transparency = 0
+                end
+            end
+        end
+        game.Lighting.FogColor = Color3.fromRGB(255, 255, 255)
+    end)
+    
+    -- ХОТКЕЙ X
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
+        if not gpe and input.KeyCode == Enum.KeyCode.X then
+            main.Visible = not main.Visible
+        end
+    end)
 end
 
 -- ============================================================
--- 6. ФОРСИРОВАННЫЙ ЗАПУСК
+-- 5. ЛОГИКА ПАРОЛЯ
 -- ============================================================
 
-print("🔥 ЗАПУСК RYZEN ULTIMATE...")
-
--- Защита от ошибок
-pcall(function()
-    -- Ждём появления игрока
-    while not player or not player.Parent do
-        task.wait(0.5)
+passBtn.MouseButton1Click:Connect(function()
+    if passBox.Text == "ryzen2025" then
+        showMainMenu()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "✅",
+            Text = "ДОСТУП РАЗРЕШЕН!",
+            Duration = 3
+        })
+    else
+        passBox.Text = ""
+        passBox.PlaceholderText = "❌ НЕВЕРНЫЙ ПАРОЛЬ!"
+        passBox.PlaceholderColor3 = Color3.fromRGB(255, 0, 0)
+        task.wait(1.5)
+        passBox.PlaceholderText = "Введите пароль..."
+        passBox.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
     end
-    
-    -- Ждём PlayerGui
-    while not player:FindFirstChild("PlayerGui") do
-        task.wait(0.5)
-    end
-    
-    print("✅ ИГРОК ЗАГРУЖЕН, СОЗДАЁМ GUI...")
-    createGUI()
 end)
 
--- Если что-то пошло не так - пробуем ещё раз через 2 секунды
-task.wait(2)
-if not game:GetService("CoreGui"):FindFirstChild("LoadingFrame") and not player.PlayerGui:FindFirstChild("LoadingFrame") then
-    print("⚠️ ПОВТОРНАЯ ПОПЫТКА СОЗДАНИЯ GUI...")
-    pcall(createGUI)
-end
+passBox.FocusLost:Connect(function(enter)
+    if enter then passBtn.MouseButton1Click:Fire() end
+end)
 
-print("✅ RYZEN ULTIMATE - ФОРСИРОВАННЫЙ ЗАПУСК АКТИВИРОВАН!")
+print("✅ RYZEN ULTIMATE ЗАПУЩЕН!")
