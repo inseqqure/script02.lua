@@ -1,4 +1,4 @@
--- RYZEN ULTIMATE v13.0 - РАБОЧАЯ ВЕРСИЯ С ТЕЛЕПОРТАМИ
+-- RYZEN ULTIMATE v13.0 - ХАКЕРСКАЯ ТЕМА
 -- Пароль: ryzen2025
 
 local Players = game:GetService("Players")
@@ -6,11 +6,10 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 
 -- ============================================================
--- 1. ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
+-- 1. ФУНКЦИИ ДЛЯ ИЗМЕНЕНИЯ ТЕКСТУР
 -- ============================================================
 
 local function notify(title, text)
@@ -21,205 +20,179 @@ local function notify(title, text)
     })
 end
 
--- Получение позиции игрока
-local function getPlayerPosition()
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        return char.HumanoidRootPart.Position
-    end
-    return Vector3.new(0, 0, 0)
-end
-
--- Телепорт игрока
-local function teleportPlayer(pos)
-    local char = player.Character
-    if char and char:FindFirstChild("HumanoidRootPart") then
-        char.HumanoidRootPart.CFrame = CFrame.new(pos)
-        notify("📍 ТЕЛЕПОРТ", "Телепорт выполнен!")
-    end
-end
-
--- ============================================================
--- 2. РАБОЧИЕ ФУНКЦИИ
--- ============================================================
-
--- СОЗДАНИЕ КАРТЫ (С ТЕЛЕПОРТОМ)
-local function createApocalypseMap()
-    -- Телепортируем игрока на новую карту
-    teleportPlayer(Vector3.new(0, 5, 0))
+-- СОЗДАНИЕ КРАСНО-ЧЕРНЫХ ТЕКСТУР
+local function createRedBlackTexture()
+    -- Создаем текстуру в памяти
+    local textureId = "rbxassetid://15050311563" -- Красное небо
     
-    -- Создаем визуальные эффекты (только для игрока)
-    local effects = Instance.new("Folder")
-    effects.Name = "RyzenEffects"
-    effects.Parent = player
-    
-    -- Создаем партиклы вокруг игрока
-    for i = 1, 50 do
-        local part = Instance.new("Part")
-        part.Size = Vector3.new(0.3, 0.3, 0.3)
-        part.Position = getPlayerPosition() + Vector3.new(math.random(-20, 20), math.random(-10, 30), math.random(-20, 20))
-        part.BrickColor = BrickColor.new("Bright red")
-        part.Material = Enum.Material.Neon
-        part.Anchored = true
-        part.CanCollide = false
-        part.Parent = effects
-        Debris:AddItem(part, 3)
-    end
-    
-    -- Меняем небо (только локально)
-    pcall(function()
-        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-        sky.SkyboxBk = "rbxassetid://15050311563"
-        sky.SkyboxDn = "rbxassetid://15050311563"
-        sky.SkyboxLf = "rbxassetid://15050311563"
-        sky.SkyboxRt = "rbxassetid://15050311563"
-        sky.SkyboxUp = "rbxassetid://15050311563"
-        Lighting.FogColor = Color3.fromRGB(200, 50, 50)
-        Lighting.FogEnd = 250
-        Lighting.Brightness = 1.5
-    end)
-    
-    notify("🌋 КАРТА", "Вы телепортированы на апокалипсис-карту!")
-end
-
--- ПРИЗЫВ БОССА (ВОКРУГ ИГРОКА)
-local function spawnBoss()
-    local pos = getPlayerPosition()
-    local boss = Instance.new("Model")
-    boss.Name = "Ryzen_BOSS"
-    boss.Parent = game.Workspace
-    
-    local body = Instance.new("Part")
-    body.Size = Vector3.new(5, 5, 5)
-    body.Position = pos + Vector3.new(0, 2.5, 10)
-    body.BrickColor = BrickColor.new("Really black")
-    body.Anchored = true
-    body.CanCollide = false
-    body.Parent = boss
-    
-    -- Глаза
-    for i = -1, 1, 2 do
-        local eye = Instance.new("Part")
-        eye.Size = Vector3.new(0.4, 0.4, 0.4)
-        eye.CFrame = body.CFrame * CFrame.new(i * 0.8, 0.3, 2.8)
-        eye.BrickColor = BrickColor.new("Bright red")
-        eye.Material = Enum.Material.Neon
-        eye.Anchored = true
-        eye.CanCollide = false
-        eye.Parent = boss
-    end
-    
-    -- Надпись
-    local bill = Instance.new("BillboardGui")
-    bill.Size = UDim2.new(0, 6, 0, 1.5)
-    bill.StudsOffset = Vector3.new(0, 3.5, 0)
-    bill.AlwaysOnTop = true
-    bill.Parent = body
-    
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.BackgroundTransparency = 1
-    label.Text = "🔥 RYZEN BOSS 🔥"
-    label.TextColor3 = Color3.fromRGB(255, 0, 0)
-    label.TextScaled = true
-    label.Font = Enum.Font.GothamBold
-    label.Parent = bill
-    
-    Debris:AddItem(boss, 30)
-    notify("👹 БОСС", "Босс призван рядом с вами!")
-end
-
--- ТАНК (ВОКРУГ ИГРОКА)
-local function spawnTank()
-    local pos = getPlayerPosition()
-    local tank = Instance.new("Model")
-    tank.Name = "RyzenTank"
-    tank.Parent = game.Workspace
-    
-    local body = Instance.new("Part")
-    body.Size = Vector3.new(8, 2, 5)
-    body.BrickColor = BrickColor.new("Dark green")
-    body.Position = pos + Vector3.new(0, 1, 8)
-    body.Anchored = true
-    body.CanCollide = false
-    body.Parent = tank
-    
-    local turret = Instance.new("Part")
-    turret.Size = Vector3.new(3, 1.5, 3)
-    turret.BrickColor = BrickColor.new("Dark green")
-    turret.Position = body.Position + Vector3.new(0, 2, 0)
-    turret.Anchored = true
-    turret.CanCollide = false
-    turret.Parent = tank
-    
-    Debris:AddItem(tank, 60)
-    notify("🎮 ТАНК", "Танк создан рядом с вами!")
-end
-
--- КРОВАВОЕ НЕБО (РАБОТАЕТ!)
-local function changeSky()
-    pcall(function()
-        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-        sky.SkyboxBk = "rbxassetid://15050311563"
-        sky.SkyboxDn = "rbxassetid://15050311563"
-        sky.SkyboxLf = "rbxassetid://15050311563"
-        sky.SkyboxRt = "rbxassetid://15050311563"
-        sky.SkyboxUp = "rbxassetid://15050311563"
-        Lighting.FogColor = Color3.fromRGB(200, 50, 50)
-        Lighting.Brightness = 2
-        
-        -- Визуальный эффект
-        for i = 1, 20 do
-            local part = Instance.new("Part")
-            part.Size = Vector3.new(0.5, 0.5, 0.5)
-            part.Position = getPlayerPosition() + Vector3.new(math.random(-30, 30), math.random(0, 40), math.random(-30, 30))
-            part.BrickColor = BrickColor.new("Bright red")
-            part.Material = Enum.Material.Neon
-            part.Anchored = true
-            part.CanCollide = false
-            part.Parent = game.Workspace
-            Debris:AddItem(part, 2)
-        end
-    end)
-    notify("🌅 НЕБО", "Кровавое небо активировано!")
-end
-
--- УНИЧТОЖИТЬ КАРТУ (Удаляем объекты вокруг игрока)
-local function destroyMap()
-    local pos = getPlayerPosition()
-    local count = 0
-    
-    for _, v in pairs(game.Workspace:GetChildren()) do
-        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) and not v.Name:match("Ryzen") then
+    -- Меняем все части на карте
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v:IsA("BasePart") then
             pcall(function()
-                if v.Position and (v.Position - pos).Magnitude < 100 then
-                    v:Destroy()
-                    count = count + 1
+                -- Меняем цвет на красный/черный
+                local colors = {
+                    Color3.fromRGB(255, 0, 0),    -- Красный
+                    Color3.fromRGB(200, 0, 0),    -- Темно-красный
+                    Color3.fromRGB(150, 0, 0),    -- Еще темнее
+                    Color3.fromRGB(0, 0, 0),      -- Черный
+                    Color3.fromRGB(50, 0, 0),     -- Очень темный красный
+                }
+                v.Color = colors[math.random(1, #colors)]
+                
+                -- Делаем материал матовым или стеклянным
+                local materials = {
+                    Enum.Material.SmoothPlastic,
+                    Enum.Material.Glass,
+                    Enum.Material.Neon,
+                }
+                v.Material = materials[math.random(1, #materials)]
+                
+                -- Добавляем свечение некоторым частям
+                if math.random(1, 3) == 1 then
+                    v.Material = Enum.Material.Neon
                 end
             end)
         end
     end
+end
+
+-- ИЗМЕНЕНИЕ НЕБА (ХАКЕРСКИЙ СТИЛЬ)
+local function changeSkyToHacker()
+    pcall(function()
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+        
+        -- Хакерское небо (красное с черным)
+        sky.SkyboxBk = "rbxassetid://15050311563"  -- Красное
+        sky.SkyboxDn = "rbxassetid://15050311563"  -- Красное
+        sky.SkyboxLf = "rbxassetid://15050311563"  -- Красное
+        sky.SkyboxRt = "rbxassetid://15050311563"  -- Красное
+        sky.SkyboxUp = "rbxassetid://15050311563"  -- Красное
+        
+        -- Настройки освещения
+        Lighting.FogColor = Color3.fromRGB(200, 0, 0)
+        Lighting.FogEnd = 1000
+        Lighting.Brightness = 1.5
+        Lighting.Ambient = Color3.fromRGB(50, 0, 0)
+        Lighting.OutdoorAmbient = Color3.fromRGB(100, 0, 0)
+        
+        -- Создаем хакерские эффекты
+        local effects = Instance.new("Folder")
+        effects.Name = "HackerEffects"
+        effects.Parent = game.Workspace
+        
+        -- Создаем красные партиклы по всей карте
+        for i = 1, 100 do
+            local part = Instance.new("Part")
+            part.Size = Vector3.new(0.5, 0.5, 0.5)
+            part.Position = Vector3.new(
+                math.random(-200, 200),
+                math.random(0, 100),
+                math.random(-200, 200)
+            )
+            part.BrickColor = BrickColor.new("Bright red")
+            part.Material = Enum.Material.Neon
+            part.Anchored = true
+            part.CanCollide = false
+            part.Parent = effects
+            Debris:AddItem(part, 5)
+        end
+        
+        -- Создаем красные лучи
+        for i = 1, 20 do
+            local beam = Instance.new("Part")
+            beam.Size = Vector3.new(0.2, math.random(10, 50), 0.2)
+            beam.Position = Vector3.new(
+                math.random(-150, 150),
+                math.random(10, 50),
+                math.random(-150, 150)
+            )
+            beam.BrickColor = BrickColor.new("Bright red")
+            beam.Material = Enum.Material.Neon
+            beam.Anchored = true
+            beam.CanCollide = false
+            beam.Parent = effects
+            Debris:AddItem(beam, 10)
+        end
+    end)
     
-    notify("💀 КАРТА", "Уничтожено " .. count .. " объектов вокруг вас!")
+    notify("🌅 НЕБО", "Хакерское небо активировано!")
 end
 
--- ТЕЛЕПОРТЫ
-local function teleportToSky()
-    teleportPlayer(Vector3.new(0, 500, 0))
+-- ПОЛНАЯ ТРАНСФОРМАЦИЯ КАРТЫ
+local function transformMap()
+    notify("🔥 ТРАНСФОРМАЦИЯ", "Начинаем изменение карты...")
+    
+    -- Меняем все текстуры
+    createRedBlackTexture()
+    
+    -- Меняем небо
+    changeSkyToHacker()
+    
+    -- Добавляем атмосферу
+    pcall(function()
+        -- Меняем цвет воды (если есть)
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("Terrain") then
+                v.WaterColor = Color3.fromRGB(200, 0, 0)
+                v.WaterReflectance = 0.5
+                v.WaterTransparency = 0.5
+            end
+        end
+        
+        -- Меняем цвет земли в Terrain
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("Terrain") then
+                for x = -50, 50, 10 do
+                    for z = -50, 50, 10 do
+                        pcall(function()
+                            v:FillBlock(CFrame.new(x, -5, z), Vector3.new(10, 1, 10), Enum.Material.Air)
+                        end)
+                    end
+                end
+            end
+        end
+    end)
+    
+    notify("✅ ТРАНСФОРМАЦИЯ", "Карта полностью изменена!")
 end
 
-local function teleportToGround()
-    teleportPlayer(Vector3.new(0, 5, 0))
-end
-
-local function teleportRandom()
-    local x = math.random(-200, 200)
-    local z = math.random(-200, 200)
-    teleportPlayer(Vector3.new(x, 5, z))
+-- ВОССТАНОВЛЕНИЕ КАРТЫ
+local function restoreMap()
+    pcall(function()
+        -- Удаляем эффекты
+        local effects = game.Workspace:FindFirstChild("HackerEffects")
+        if effects then effects:Destroy() end
+        
+        -- Восстанавливаем небо
+        local sky = Lighting:FindFirstChild("Sky")
+        if sky then
+            sky.SkyboxBk = "rbxassetid://0"
+            sky.SkyboxDn = "rbxassetid://0"
+            sky.SkyboxLf = "rbxassetid://0"
+            sky.SkyboxRt = "rbxassetid://0"
+            sky.SkyboxUp = "rbxassetid://0"
+        end
+        
+        Lighting.FogColor = Color3.fromRGB(255, 255, 255)
+        Lighting.Brightness = 1
+        Lighting.Ambient = Color3.fromRGB(127, 127, 127)
+        
+        -- Восстанавливаем цвета частей
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                pcall(function()
+                    v.Color = Color3.fromRGB(255, 255, 255)
+                    v.Material = Enum.Material.SmoothPlastic
+                end)
+            end
+        end
+    end)
+    
+    notify("🔄 ВОССТАНОВЛЕНИЕ", "Карта восстановлена!")
 end
 
 -- ============================================================
--- 3. СОЗДАНИЕ GUI
+-- 2. СОЗДАНИЕ GUI
 -- ============================================================
 
 local function createGUI()
@@ -228,7 +201,7 @@ local function createGUI()
     gui.ResetOnSpawn = false
     gui.Parent = player.PlayerGui
 
-    -- ЗАГРУЗОЧНЫЙ ЭКРАН
+    -- Загрузочный экран
     local loadingFrame = Instance.new("Frame")
     loadingFrame.Size = UDim2.new(0, 300, 0, 160)
     loadingFrame.Position = UDim2.new(0.5, -150, 0.5, -80)
@@ -277,7 +250,7 @@ local function createGUI()
     progressText.ZIndex = 11
     progressText.Parent = loadingFrame
 
-    -- ОКНО ПАРОЛЯ
+    -- Окно пароля
     local passwordFrame = Instance.new("Frame")
     passwordFrame.Size = UDim2.new(0, 320, 0, 200)
     passwordFrame.Position = UDim2.new(0.5, -160, 0.5, -100)
@@ -327,10 +300,10 @@ local function createGUI()
     submitBtn.ZIndex = 6
     submitBtn.Parent = passwordFrame
 
-    -- ГЛАВНАЯ ПАНЕЛЬ
+    -- Главная панель
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 340, 0, 520)
-    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -260)
+    mainFrame.Size = UDim2.new(0, 340, 0, 480)
+    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -240)
     mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     mainFrame.BorderSizePixel = 2
     mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
@@ -358,7 +331,7 @@ local function createGUI()
     scroll.Position = UDim2.new(0, 5, 0, 50)
     scroll.BackgroundTransparency = 1
     scroll.BorderSizePixel = 0
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 650)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
     scroll.ScrollBarThickness = 6
     scroll.Parent = mainFrame
 
@@ -368,17 +341,17 @@ local function createGUI()
     layout.Parent = scroll
 
     -- ============================================================
-    -- 4. СОЗДАНИЕ КНОПОК
+    -- 3. СОЗДАНИЕ КНОПОК
     -- ============================================================
 
     local function createButton(text, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -10, 0, 38)
+        btn.Size = UDim2.new(1, -10, 0, 40)
         btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
         btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 13
+        btn.TextSize = 14
         btn.Parent = scroll
 
         local btnCorner = Instance.new("UICorner")
@@ -398,39 +371,24 @@ local function createGUI()
     end
 
     -- ============================================================
-    -- 5. КНОПКИ С ФУНКЦИЯМИ
+    -- 4. КНОПКИ
     -- ============================================================
 
-    createButton("🌋 КАРТА АПОКАЛИПСИСА (С ТЕЛЕПОРТОМ)", function()
-        createApocalypseMap()
+    createButton("🔥 ПОЛНАЯ ТРАНСФОРМАЦИЯ КАРТЫ", function()
+        transformMap()
     end)
 
-    createButton("👹 ПРИЗВАТЬ RYZEN БОССА", function()
-        spawnBoss()
+    createButton("🌅 ТОЛЬКО ХАКЕРСКОЕ НЕБО", function()
+        changeSkyToHacker()
     end)
 
-    createButton("🎮 СПАВН ТАНКА", function()
-        spawnTank()
+    createButton("🎨 ТОЛЬКО КРАСНО-ЧЕРНЫЕ ТЕКСТУРЫ", function()
+        createRedBlackTexture()
+        notify("🎨 ТЕКСТУРЫ", "Все текстуры изменены на красно-черные!")
     end)
 
-    createButton("🌅 КРОВАВОЕ НЕБО", function()
-        changeSky()
-    end)
-
-    createButton("💀 УНИЧТОЖИТЬ КАРТУ", function()
-        destroyMap()
-    end)
-
-    createButton("☁️ ТЕЛЕПОРТ В НЕБО", function()
-        teleportToSky()
-    end)
-
-    createButton("🌍 ТЕЛЕПОРТ НА ЗЕМЛЮ", function()
-        teleportToGround()
-    end)
-
-    createButton("🎲 СЛУЧАЙНЫЙ ТЕЛЕПОРТ", function()
-        teleportRandom()
+    createButton("🔄 ВОССТАНОВИТЬ КАРТУ", function()
+        restoreMap()
     end)
 
     createButton("💀 БЕССМЕРТИЕ", function()
@@ -491,7 +449,7 @@ local function createGUI()
         notify("👑 АДМИНКА", "Визуальная админка выдана!")
     end)
 
-    createButton("🔄 СБРОСИТЬ ВСЕ", function()
+    createButton("🔄 СБРОСИТЬ НАСТРОЙКИ", function()
         local char = player.Character
         if char and char:FindFirstChild("Humanoid") then
             char.Humanoid.WalkSpeed = 16
@@ -508,7 +466,7 @@ local function createGUI()
     end)
 
     -- ============================================================
-    -- 6. ЛОГИКА ЗАПУСКА
+    -- 5. ЛОГИКА ЗАПУСКА
     -- ============================================================
 
     local function animateLoading()
@@ -564,8 +522,8 @@ local function createGUI()
 end
 
 -- ============================================================
--- 7. ЗАПУСК
+-- 6. ЗАПУСК
 -- ============================================================
 
 pcall(createGUI)
-print("✅ RYZEN ULTIMATE v13.0 [С ТЕЛЕПОРТАМИ] ЗАПУЩЕНА!")
+print("✅ RYZEN ULTIMATE v13.0 [ХАКЕРСКАЯ ТЕМА] ЗАПУЩЕНА!")
