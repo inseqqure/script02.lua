@@ -1,4 +1,4 @@
--- RYZEN ULTIMATE v13.0 - ХАКЕРСКАЯ ТЕМА
+-- RYZEN ULTIMATE v13.0 - ПОЛНАЯ ВЕРСИЯ
 -- Пароль: ryzen2025
 
 local Players = game:GetService("Players")
@@ -6,10 +6,12 @@ local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
+local camera = game.Workspace.CurrentCamera
 
 -- ============================================================
--- 1. ФУНКЦИИ ДЛЯ ИЗМЕНЕНИЯ ТЕКСТУР
+-- 1. ФУНКЦИИ
 -- ============================================================
 
 local function notify(title, text)
@@ -20,149 +22,287 @@ local function notify(title, text)
     })
 end
 
--- СОЗДАНИЕ КРАСНО-ЧЕРНЫХ ТЕКСТУР
-local function createRedBlackTexture()
-    -- Создаем текстуру в памяти
-    local textureId = "rbxassetid://15050311563" -- Красное небо
-    
-    -- Меняем все части на карте
-    for _, v in pairs(game.Workspace:GetDescendants()) do
-        if v:IsA("BasePart") then
-            pcall(function()
-                -- Меняем цвет на красный/черный
-                local colors = {
-                    Color3.fromRGB(255, 0, 0),    -- Красный
-                    Color3.fromRGB(200, 0, 0),    -- Темно-красный
-                    Color3.fromRGB(150, 0, 0),    -- Еще темнее
-                    Color3.fromRGB(0, 0, 0),      -- Черный
-                    Color3.fromRGB(50, 0, 0),     -- Очень темный красный
-                }
-                v.Color = colors[math.random(1, #colors)]
-                
-                -- Делаем материал матовым или стеклянным
-                local materials = {
-                    Enum.Material.SmoothPlastic,
-                    Enum.Material.Glass,
-                    Enum.Material.Neon,
-                }
-                v.Material = materials[math.random(1, #materials)]
-                
-                -- Добавляем свечение некоторым частям
-                if math.random(1, 3) == 1 then
-                    v.Material = Enum.Material.Neon
-                end
-            end)
+-- ПЕРЕЛИВАЮЩИЕСЯ ЦВЕТА
+local colorCycle = 0
+local function getCyclicColor()
+    colorCycle = colorCycle + 0.02
+    local r = math.sin(colorCycle) * 0.5 + 0.5
+    local g = math.sin(colorCycle + 2) * 0.1
+    local b = math.sin(colorCycle + 4) * 0.1
+    return Color3.new(r, g, b)
+end
+
+-- ИЗМЕНЕНИЕ ТРАВЫ (ЧЕРЕЗ TERRAIN)
+local function changeGrassToRed()
+    pcall(function()
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("Terrain") then
+                -- Меняем цвет травы на красный
+                v:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(200, 0, 0))
+                v:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(150, 0, 0))
+                v:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(100, 0, 0))
+                v:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(50, 0, 0))
+                v.WaterColor = Color3.fromRGB(200, 0, 0)
+            end
         end
+        
+        -- Меняем цвет всех частей на переливающийся
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
+                pcall(function()
+                    v.Color = getCyclicColor()
+                    if math.random(1, 3) == 1 then
+                        v.Material = Enum.Material.Neon
+                    end
+                end)
+            end
+        end
+    end)
+end
+
+-- АНИМАЦИЯ ПЕРЕЛИВАЮЩИХСЯ ЦВЕТОВ
+local colorLoop
+local function startColorCycle()
+    if colorLoop then return end
+    
+    colorLoop = RunService.RenderStepped:Connect(function()
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("BasePart") and not v:IsDescendantOf(game.Players) then
+                pcall(function()
+                    v.Color = getCyclicColor()
+                end)
+            end
+        end
+        
+        -- Меняем цвет тумана
+        Lighting.FogColor = getCyclicColor()
+    end)
+    
+    notify("🎨 ЦВЕТА", "Переливающиеся цвета активированы!")
+end
+
+-- ОСТАНОВКА ПЕРЕЛИВАНИЯ
+local function stopColorCycle()
+    if colorLoop then
+        colorLoop:Disconnect()
+        colorLoop = nil
+        notify("🔄 ЦВЕТА", "Переливание остановлено!")
     end
 end
 
--- ИЗМЕНЕНИЕ НЕБА (ХАКЕРСКИЙ СТИЛЬ)
-local function changeSkyToHacker()
+-- ============================================================
+-- 2. СКРИМЕРЫ
+-- ============================================================
+
+local function createScreamer()
+    -- Создаем черный экран
+    local screamer = Instance.new("Frame")
+    screamer.Size = UDim2.new(1, 0, 1, 0)
+    screamer.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    screamer.ZIndex = 999
+    screamer.Parent = player.PlayerGui
+    
+    -- Красная надпись
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = "😱 RYZEN ATTACK! 😱"
+    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.Font = Enum.Font.GothamBlack
+    text.TextSize = 60
+    text.ZIndex = 1000
+    text.Parent = screamer
+    
+    -- Красные молнии
+    for i = 1, 10 do
+        local lightning = Instance.new("Frame")
+        lightning.Size = UDim2.new(0, math.random(5, 100), 1, 0)
+        lightning.Position = UDim2.new(math.random() * 0.9, 0, 0, 0)
+        lightning.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        lightning.ZIndex = 1001
+        lightning.Parent = screamer
+    end
+    
+    -- Тряска экрана
+    local originalPos = camera.CFrame
+    for i = 1, 10 do
+        camera.CFrame = originalPos * CFrame.new(
+            math.random(-5, 5),
+            math.random(-5, 5),
+            math.random(-5, 5)
+        )
+        task.wait(0.05)
+    end
+    camera.CFrame = originalPos
+    
+    -- Звук скримера (если есть)
     pcall(function()
-        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-        
-        -- Хакерское небо (красное с черным)
-        sky.SkyboxBk = "rbxassetid://15050311563"  -- Красное
-        sky.SkyboxDn = "rbxassetid://15050311563"  -- Красное
-        sky.SkyboxLf = "rbxassetid://15050311563"  -- Красное
-        sky.SkyboxRt = "rbxassetid://15050311563"  -- Красное
-        sky.SkyboxUp = "rbxassetid://15050311563"  -- Красное
-        
-        -- Настройки освещения
-        Lighting.FogColor = Color3.fromRGB(200, 0, 0)
-        Lighting.FogEnd = 1000
-        Lighting.Brightness = 1.5
-        Lighting.Ambient = Color3.fromRGB(50, 0, 0)
-        Lighting.OutdoorAmbient = Color3.fromRGB(100, 0, 0)
-        
-        -- Создаем хакерские эффекты
-        local effects = Instance.new("Folder")
-        effects.Name = "HackerEffects"
-        effects.Parent = game.Workspace
-        
-        -- Создаем красные партиклы по всей карте
-        for i = 1, 100 do
-            local part = Instance.new("Part")
-            part.Size = Vector3.new(0.5, 0.5, 0.5)
-            part.Position = Vector3.new(
-                math.random(-200, 200),
-                math.random(0, 100),
-                math.random(-200, 200)
-            )
-            part.BrickColor = BrickColor.new("Bright red")
-            part.Material = Enum.Material.Neon
-            part.Anchored = true
-            part.CanCollide = false
-            part.Parent = effects
-            Debris:AddItem(part, 5)
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://9120381772" -- Звук скримера
+        sound.Volume = 1
+        sound.Parent = game.Workspace
+        sound:Play()
+        Debris:AddItem(sound, 3)
+    end)
+    
+    task.wait(0.5)
+    screamer:Destroy()
+end
+
+-- ============================================================
+-- 3. ТАНЦЫ
+-- ============================================================
+
+local function danceAnimation()
+    local char = player.Character
+    if not char then return end
+    
+    local humanoid = char:FindFirstChild("Humanoid")
+    if not humanoid then return end
+    
+    -- Анимация танца через изменение позиции частей тела
+    local torso = char:FindFirstChild("Torso") or char:FindFirstChild("UpperTorso")
+    local head = char:FindFirstChild("Head")
+    local leftLeg = char:FindFirstChild("LeftLeg")
+    local rightLeg = char:FindFirstChild("RightLeg")
+    local leftArm = char:FindFirstChild("LeftArm")
+    local rightArm = char:FindFirstChild("RightArm")
+    
+    if not torso then return end
+    
+    local danceLoop = true
+    local step = 0
+    
+    game:GetService("RunService").RenderStepped:Connect(function()
+        if not danceLoop or not char.Parent then
+            return
         end
         
-        -- Создаем красные лучи
-        for i = 1, 20 do
-            local beam = Instance.new("Part")
-            beam.Size = Vector3.new(0.2, math.random(10, 50), 0.2)
-            beam.Position = Vector3.new(
-                math.random(-150, 150),
-                math.random(10, 50),
-                math.random(-150, 150)
-            )
-            beam.BrickColor = BrickColor.new("Bright red")
-            beam.Material = Enum.Material.Neon
-            beam.Anchored = true
-            beam.CanCollide = false
-            beam.Parent = effects
-            Debris:AddItem(beam, 10)
+        step = step + 0.1
+        local sin = math.sin(step)
+        local cos = math.cos(step)
+        
+        -- Движения тела
+        if torso then
+            torso.CFrame = torso.CFrame * CFrame.Angles(0, 0, sin * 0.1)
+        end
+        
+        if head then
+            head.CFrame = head.CFrame * CFrame.Angles(0, sin * 0.2, 0)
+        end
+        
+        if leftLeg then
+            leftLeg.CFrame = leftLeg.CFrame * CFrame.Angles(sin * 0.3, 0, 0)
+        end
+        
+        if rightLeg then
+            rightLeg.CFrame = rightLeg.CFrame * CFrame.Angles(cos * 0.3, 0, 0)
+        end
+        
+        if leftArm then
+            leftArm.CFrame = leftArm.CFrame * CFrame.Angles(0, 0, sin * 0.3)
+        end
+        
+        if rightArm then
+            rightArm.CFrame = rightArm.CFrame * CFrame.Angles(0, 0, cos * 0.3)
         end
     end)
     
-    notify("🌅 НЕБО", "Хакерское небо активировано!")
+    notify("💃 ТАНЕЦ", "Вы танцуете!")
 end
 
--- ПОЛНАЯ ТРАНСФОРМАЦИЯ КАРТЫ
+-- ============================================================
+-- 4. ПЕРЕВОРОТ ЭКРАНА
+-- ============================================================
+
+local function flipScreen()
+    local flipGui = Instance.new("ScreenGui")
+    flipGui.Name = "FlipScreen"
+    flipGui.Parent = player.PlayerGui
+    
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundTransparency = 1
+    frame.ZIndex = 999
+    frame.Parent = flipGui
+    
+    local flipText = Instance.new("TextLabel")
+    flipText.Size = UDim2.new(1, 0, 1, 0)
+    flipText.BackgroundTransparency = 1
+    flipText.Text = "🔄 ЭКРАН ПЕРЕВЕРНУТ!"
+    flipText.TextColor3 = Color3.fromRGB(255, 0, 0)
+    flipText.Font = Enum.Font.GothamBold
+    flipText.TextSize = 40
+    flipText.ZIndex = 1000
+    flipText.Parent = frame
+    
+    -- Эффект переворота через поворот камеры
+    local originalCF = camera.CFrame
+    local targetCF = originalCF * CFrame.Angles(0, 0, math.pi) -- Переворот на 180 градусов
+    
+    local tween = TweenService:Create(camera, TweenInfo.new(0.5), {
+        CFrame = targetCF
+    })
+    tween:Play()
+    
+    task.wait(2)
+    
+    -- Возвращаем обратно
+    local tweenBack = TweenService:Create(camera, TweenInfo.new(0.5), {
+        CFrame = originalCF
+    })
+    tweenBack:Play()
+    
+    task.wait(0.5)
+    flipGui:Destroy()
+end
+
+-- ============================================================
+-- 5. ТРАНСФОРМАЦИЯ КАРТЫ
+-- ============================================================
+
 local function transformMap()
     notify("🔥 ТРАНСФОРМАЦИЯ", "Начинаем изменение карты...")
     
-    -- Меняем все текстуры
-    createRedBlackTexture()
+    -- Меняем траву
+    changeGrassToRed()
+    
+    -- Запускаем переливание цветов
+    startColorCycle()
     
     -- Меняем небо
-    changeSkyToHacker()
-    
-    -- Добавляем атмосферу
     pcall(function()
-        -- Меняем цвет воды (если есть)
-        for _, v in pairs(game.Workspace:GetDescendants()) do
-            if v:IsA("Terrain") then
-                v.WaterColor = Color3.fromRGB(200, 0, 0)
-                v.WaterReflectance = 0.5
-                v.WaterTransparency = 0.5
-            end
-        end
-        
-        -- Меняем цвет земли в Terrain
-        for _, v in pairs(game.Workspace:GetDescendants()) do
-            if v:IsA("Terrain") then
-                for x = -50, 50, 10 do
-                    for z = -50, 50, 10 do
-                        pcall(function()
-                            v:FillBlock(CFrame.new(x, -5, z), Vector3.new(10, 1, 10), Enum.Material.Air)
-                        end)
-                    end
-                end
-            end
-        end
+        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+        sky.SkyboxBk = "rbxassetid://15050311563"
+        sky.SkyboxDn = "rbxassetid://15050311563"
+        sky.SkyboxLf = "rbxassetid://15050311563"
+        sky.SkyboxRt = "rbxassetid://15050311563"
+        sky.SkyboxUp = "rbxassetid://15050311563"
+        Lighting.FogColor = Color3.fromRGB(200, 0, 0)
+        Lighting.Brightness = 1.5
     end)
+    
+    -- Меняем пол (землю)
+    for _, v in pairs(game.Workspace:GetDescendants()) do
+        if v:IsA("BasePart") and v.Name:lower():match("floor") or v.Name:lower():match("ground") then
+            pcall(function()
+                v.Color = Color3.fromRGB(100, 0, 0)
+                v.Material = Enum.Material.Neon
+            end)
+        end
+    end
     
     notify("✅ ТРАНСФОРМАЦИЯ", "Карта полностью изменена!")
 end
 
--- ВОССТАНОВЛЕНИЕ КАРТЫ
+-- ============================================================
+-- 6. ВОССТАНОВЛЕНИЕ
+-- ============================================================
+
 local function restoreMap()
+    stopColorCycle()
+    
     pcall(function()
-        -- Удаляем эффекты
-        local effects = game.Workspace:FindFirstChild("HackerEffects")
-        if effects then effects:Destroy() end
-        
         -- Восстанавливаем небо
         local sky = Lighting:FindFirstChild("Sky")
         if sky then
@@ -175,9 +315,18 @@ local function restoreMap()
         
         Lighting.FogColor = Color3.fromRGB(255, 255, 255)
         Lighting.Brightness = 1
-        Lighting.Ambient = Color3.fromRGB(127, 127, 127)
         
-        -- Восстанавливаем цвета частей
+        -- Восстанавливаем траву
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("Terrain") then
+                v:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(0, 255, 0))
+                v:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(255, 255, 0))
+                v:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(139, 69, 19))
+                v.WaterColor = Color3.fromRGB(0, 0, 255)
+            end
+        end
+        
+        -- Восстанавливаем части
         for _, v in pairs(game.Workspace:GetDescendants()) do
             if v:IsA("BasePart") then
                 pcall(function()
@@ -192,7 +341,7 @@ local function restoreMap()
 end
 
 -- ============================================================
--- 2. СОЗДАНИЕ GUI
+-- 7. GUI
 -- ============================================================
 
 local function createGUI()
@@ -302,8 +451,8 @@ local function createGUI()
 
     -- Главная панель
     local mainFrame = Instance.new("Frame")
-    mainFrame.Size = UDim2.new(0, 340, 0, 480)
-    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -240)
+    mainFrame.Size = UDim2.new(0, 340, 0, 520)
+    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -260)
     mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
     mainFrame.BorderSizePixel = 2
     mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
@@ -331,7 +480,7 @@ local function createGUI()
     scroll.Position = UDim2.new(0, 5, 0, 50)
     scroll.BackgroundTransparency = 1
     scroll.BorderSizePixel = 0
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 650)
     scroll.ScrollBarThickness = 6
     scroll.Parent = mainFrame
 
@@ -341,17 +490,17 @@ local function createGUI()
     layout.Parent = scroll
 
     -- ============================================================
-    -- 3. СОЗДАНИЕ КНОПОК
+    -- 8. КНОПКИ
     -- ============================================================
 
     local function createButton(text, callback)
         local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(1, -10, 0, 40)
+        btn.Size = UDim2.new(1, -10, 0, 38)
         btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
         btn.Text = text
         btn.TextColor3 = Color3.fromRGB(240, 240, 240)
         btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 14
+        btn.TextSize = 13
         btn.Parent = scroll
 
         local btnCorner = Instance.new("UICorner")
@@ -370,21 +519,47 @@ local function createGUI()
         return btn
     end
 
-    -- ============================================================
-    -- 4. КНОПКИ
-    -- ============================================================
-
-    createButton("🔥 ПОЛНАЯ ТРАНСФОРМАЦИЯ КАРТЫ", function()
+    createButton("🔥 ПОЛНАЯ ТРАНСФОРМАЦИЯ", function()
         transformMap()
     end)
 
-    createButton("🌅 ТОЛЬКО ХАКЕРСКОЕ НЕБО", function()
-        changeSkyToHacker()
+    createButton("🌿 КРАСНАЯ ТРАВА И ПОЛ", function()
+        changeGrassToRed()
+        notify("🌿 ТРАВА", "Трава и пол стали красными!")
     end)
 
-    createButton("🎨 ТОЛЬКО КРАСНО-ЧЕРНЫЕ ТЕКСТУРЫ", function()
-        createRedBlackTexture()
-        notify("🎨 ТЕКСТУРЫ", "Все текстуры изменены на красно-черные!")
+    createButton("🎨 ПЕРЕЛИВАЮЩИЕСЯ ЦВЕТА (ВКЛ)", function()
+        startColorCycle()
+    end)
+
+    createButton("🔄 ОСТАНОВИТЬ ПЕРЕЛИВАНИЕ", function()
+        stopColorCycle()
+    end)
+
+    createButton("😱 СКРИМЕР", function()
+        createScreamer()
+    end)
+
+    createButton("💃 ТАНЕЦ", function()
+        danceAnimation()
+    end)
+
+    createButton("🔄 ПЕРЕВОРОТ ЭКРАНА", function()
+        flipScreen()
+    end)
+
+    createButton("🌅 ХАКЕРСКОЕ НЕБО", function()
+        pcall(function()
+            local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
+            sky.SkyboxBk = "rbxassetid://15050311563"
+            sky.SkyboxDn = "rbxassetid://15050311563"
+            sky.SkyboxLf = "rbxassetid://15050311563"
+            sky.SkyboxRt = "rbxassetid://15050311563"
+            sky.SkyboxUp = "rbxassetid://15050311563"
+            Lighting.FogColor = Color3.fromRGB(200, 0, 0)
+            Lighting.Brightness = 1.5
+            notify("🌅 НЕБО", "Хакерское небо активировано!")
+        end)
     end)
 
     createButton("🔄 ВОССТАНОВИТЬ КАРТУ", function()
@@ -428,45 +603,8 @@ local function createGUI()
         end
     end)
 
-    createButton("🔫 ПОЛУЧИТЬ ОРУЖИЕ", function()
-        local tool = Instance.new("Tool")
-        tool.Name = "Ryzen_Weapon"
-        tool.RequiresHandle = true
-        tool.Parent = player.Backpack
-        
-        local handle = Instance.new("Part")
-        handle.Name = "Handle"
-        handle.Size = Vector3.new(1, 0.5, 2)
-        handle.BrickColor = BrickColor.new("Really black")
-        handle.Parent = tool
-        notify("🔫 ОРУЖИЕ", "Оружие выдано!")
-    end)
-
-    createButton("👑 ВИЗУАЛЬНАЯ АДМИНКА", function()
-        for _, plr in pairs(Players:GetPlayers()) do
-            plr.DisplayName = "[ADMIN] " .. plr.DisplayName
-        end
-        notify("👑 АДМИНКА", "Визуальная админка выдана!")
-    end)
-
-    createButton("🔄 СБРОСИТЬ НАСТРОЙКИ", function()
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = 16
-            char.Humanoid.JumpPower = 50
-            char.Humanoid.MaxHealth = 100
-            char.Humanoid.Health = 100
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = 0
-                end
-            end
-            notify("🔄 СБРОС", "Все настройки сброшены!")
-        end
-    end)
-
     -- ============================================================
-    -- 5. ЛОГИКА ЗАПУСКА
+    -- 9. ЗАПУСК
     -- ============================================================
 
     local function animateLoading()
@@ -522,8 +660,8 @@ local function createGUI()
 end
 
 -- ============================================================
--- 6. ЗАПУСК
+-- 10. ЗАПУСК
 -- ============================================================
 
 pcall(createGUI)
-print("✅ RYZEN ULTIMATE v13.0 [ХАКЕРСКАЯ ТЕМА] ЗАПУЩЕНА!")
+print("✅ RYZEN ULTIMATE v13.0 [ПОЛНАЯ ВЕРСИЯ] ЗАПУЩЕНА!")
